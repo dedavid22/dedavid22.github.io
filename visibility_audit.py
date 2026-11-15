@@ -41,7 +41,23 @@ def audit(name,url):
    tree=ET.fromstring(xml);urls=[el.text for el in tree.iter() if el.tag.endswith("}loc") and el.text][:500]
   except ET.ParseError:pass
  checks["sitemap_valid"]=len(urls)>0
- return {"site":name,"url":url,"checked_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),"checks":checks,"passed":sum(checks.values()),"total":len(checks),"sitemap_urls":len(urls),"sample_sitemap_urls":urls[:5],"llms_optional_http":llms,"errors":[e for e in [err,err2,err3,err4] if e]}
+ # Verificar algunas rutas REALES del sitemap; no asumir que la home representa todas.
+ pages=[]
+ for suburl in urls[:5]:
+  status,content,page_error=get(suburl)
+  parser=Doc()
+  if status==200:
+   try:parser.feed(content)
+   except Exception:pass
+  actual=urllib.parse.urljoin(suburl,parser.canonical[0]) if parser.canonical else ""
+  expected=urllib.parse.urlsplit(suburl)._replace(fragment="").geturl()
+  same=actual.rstrip("/")==expected.rstrip("/")
+  pages.append({"url":suburl,"http":status,"title":"".join(parser.title).strip(),"canonical":actual,
+                "canonical_matches_url":same,"error":page_error})
+ checks["sitemap_sample_pages_ok"]=bool(pages) and all(
+    row["http"]==200 and bool(row["title"]) and row["canonical_matches_url"] for row in pages
+ )
+ return {"site":name,"url":url,"checked_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),"checks":checks,"passed":sum(checks.values()),"total":len(checks),"sitemap_urls":len(urls),"sample_sitemap_urls":urls[:5],"sample_pages":pages,"llms_optional_http":llms,"errors":[e for e in [err,err2,err3,err4] if e]}
 def main():
  p=argparse.ArgumentParser();p.add_argument("--out",default="audit_results");a=p.parse_args()
  path=pathlib.Path(a.out);path.mkdir(parents=True,exist_ok=True)
@@ -52,6 +68,13 @@ def main():
  for x in data:
   lines.extend(["","## "+x["site"],x["url"],""])
   for k,v in x["checks"].items():lines.append(("- [x] " if v else "- [ ] ")+k)
+  lines.append("")
+  lines.append("Rutas muestreadas del sitemap:")
+  for row in x["sample_pages"]:
+   lines.append(("- OK " if row["http"]==200 and row["canonical_matches_url"] else "- ERROR ")+row["url"]+" HTTP="+str(row["http"])+" canonical="+str(row["canonical_matches_url"]))
  (path/"report.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
  print(json.dumps([{"site":x["site"],"passed":x["passed"],"total":x["total"],"sitemap_urls":x["sitemap_urls"]} for x in data],ensure_ascii=False))
+ # Si aparece una regresion, GitHub Actions debe marcar FAIL, no verde por defecto.
+ if any(x["passed"] != x["total"] for x in data):
+  raise SystemExit("FALLO: hay una o mas comprobaciones SEO o rutas del sitemap incorrectas")
 if __name__=="__main__":main()
