@@ -1,0 +1,25 @@
+{
+  "invoices": 60,
+  "payments": 47,
+  "paid": 36,
+  "partial": 6,
+  "overpaid": 2,
+  "open": 16,
+  "unmatched_payments": 3,
+  "unit_tests": {
+    "run": 8,
+    "failures": 0,
+    "errors": 0
+  },
+  "checks_vs_ground_truth": {
+    "sample_contains_every_case": true,
+    "paid_with_reference_all_found": true,
+    "no_invoice_wrongly_marked_paid": true,
+    "partial_exact": true,
+    "overpaid_exact": true,
+    "unpaid_all_open": true,
+    "name_plus_amount_matches_are_flagged_for_confirmation": true,
+    "unknown_and_negative_payments_left_unmatched": true
+  },
+  "all_passed": true
+}

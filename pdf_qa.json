@@ -1,0 +1,13 @@
+{
+  "forms": 14,
+  "verified_rows": 11,
+  "needs_review_rows": 3,
+  "field_accuracy_on_readable_forms": "64/64",
+  "checks": {
+    "form_06_flagged_not_guessed": true,
+    "missing_taxid_flagged": true,
+    "wrong_total_flagged": true,
+    "clean_forms_have_no_flags": true
+  },
+  "all_passed": true
+}

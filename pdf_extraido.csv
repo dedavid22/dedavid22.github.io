@@ -1,0 +1,15 @@
+File,FormID,SupplierName,OrderDate,TaxID,Total,status,review_reason
+form_01.pdf,PO-2026-0300,Pine & Quill Stationery,2026-04-17,X9588401H,1076.75,OK,
+form_02.pdf,PO-2026-0301,Lumen Print Co,2026-07-16,X1702635G,172.5,OK,
+form_03.pdf,PO-2026-0302,Lumen Print Co,2026-03-16,X1598154D,635.9,OK,
+form_04.pdf,PO-2026-0303,Granite Fabrication,2026-06-21,X4276948D,341.5,OK,
+form_05.pdf,PO-2026-0304,Meadow Pharma Demo,2026-07-20,X2395922E,97.2,OK,
+form_06.pdf,,,,,,REVIEW,no_text_layer (scanned image: needs OCR or manual reading)
+form_07.pdf,PO-2026-0306,Meadow Pharma Demo,2026-08-29,X7667674G,152.4,OK,
+form_08.pdf,PO-2026-0307,Harbor Light Foods,2026-05-26,X2462037E,448.0,OK,
+form_09.pdf,PO-2026-0308,Lumen Print Co,2026-03-03,X2004844H,202.6,OK,
+form_10.pdf,PO-2026-0309,Meadow Pharma Demo,2026-08-12,,768.1,REVIEW,missing_TaxID
+form_11.pdf,PO-2026-0310,Pine & Quill Stationery,2026-04-17,X7614830B,460.25,OK,
+form_12.pdf,PO-2026-0311,Tidal Components,2026-05-06,X1160645F,62.4,REVIEW,"total_mismatch (lines add up to 57.40, form says 62.40)"
+form_13.pdf,PO-2026-0312,Pine & Quill Stationery,2026-03-04,X7185343F,189.55,OK,
+form_14.pdf,PO-2026-0313,Harbor Light Foods,2026-04-28,X5185891D,431.65,OK,

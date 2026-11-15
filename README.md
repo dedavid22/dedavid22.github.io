@@ -1,0 +1,1 @@
+Portafolio publico de demostraciones sinteticas. No son encargos vendidos.

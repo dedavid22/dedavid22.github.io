@@ -1,0 +1,18 @@
+{
+  "all_passed": true,
+  "checks": {
+    "rows_reconcile": true,
+    "no_duplicate_order_ids": true,
+    "no_missing_required": true,
+    "customers_canonical": true,
+    "regions_canonical": true,
+    "line_total_matches": true,
+    "every_clean_row_equals_ground_truth": true,
+    "total_equals_ground_truth_total": true,
+    "unique_orders_expected": true
+  },
+  "rows_in": 585,
+  "rows_clean": 545,
+  "duplicates_removed": 25,
+  "rows_flagged": 15
+}
