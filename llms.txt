@@ -1,0 +1,10 @@
+# Denis Garcia — Servicios digitales
+
+> Servicios de Excel, PDF y Python con ejemplos demostrativos. Las muestras usan datos sintéticos.
+
+- [Servicios, catálogo y contacto](https://dedavid22.github.io/)
+- [Perfil público GitHub](https://github.com/dedavid22)
+
+Servicios: limpieza y organización de Excel; extracción de PDF a tablas; conciliación de facturas.
+Los precios publicados son orientativos y requieren presupuesto según alcance.
+No hay testimonios de clientes ni resultados comerciales atribuidos a estas muestras.

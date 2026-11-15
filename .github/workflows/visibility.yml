@@ -1,0 +1,31 @@
+name: Auditoria SEO GEO gratuita
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 8 * * *"
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Inspeccionar 3 sitios
+        run: python visibility_audit.py --out audit_results
+      - name: Publicar resumen de auditoria
+        if: always()
+        run: |
+          if [ -f audit_results/report.md ]; then
+            cat audit_results/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Guardar resultados JSON y Markdown
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seo-audit-report
+          path: audit_results/
+          retention-days: 14
