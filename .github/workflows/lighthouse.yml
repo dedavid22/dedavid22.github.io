@@ -1,0 +1,35 @@
+name: Lighthouse gratuito semanal
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 9 * * 1"
+permissions:
+  contents: read
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Confirmar Chrome
+        run: google-chrome --version || google-chrome-stable --version
+      - name: Lighthouse VecinosCanarios
+        run: |
+          mkdir -p lighthouse_results
+          npx --yes lighthouse@13.6.0 https://vecinoscanarios.onrender.com/ --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=lighthouse_results/vecinos.json --quiet
+      - name: Lighthouse RMT
+        if: success() || failure()
+        run: npx --yes lighthouse@13.6.0 https://rmt-algo-lab.pages.dev/ --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=lighthouse_results/rmt.json --quiet
+      - name: Lighthouse Apollo
+        if: success() || failure()
+        run: npx --yes lighthouse@13.6.0 https://dedavid22.github.io/ --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=lighthouse_results/apollo.json --quiet
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-3-sites
+          path: lighthouse_results/
+          retention-days: 14
