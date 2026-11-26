@@ -829,7 +829,19 @@ if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.se
     // Retain every nonempty OCR line for human review, never silently omit rows.
     return String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean).join("\n");
   }
-  root.DailyRouteCore={optimize,extract};
+  function expand(text){
+    const rows=[];
+    for(const line of String(text||"").split(/\r?\n/)){
+      const raw=line.trim().replace(/^[\s•\-–—]+/,"").replace(/[\s\-–—]+$/,"");
+      if(!raw)continue;
+      if(/\[REVISAR\]/i.test(raw)){rows.push(raw);continue}
+      const m=raw.match(/^(.+?)\s+(\d{1,4}[A-Za-z]?(?:\s*[-–—/]\s*\d{1,4}[A-Za-z]?)*)(\s*,.*)?$/);
+      if(!m){rows.push(raw);continue}
+      for(const num of m[2].split(/\s*[-–—/]\s*/))rows.push(m[1].trim()+" "+num.toUpperCase()+(m[3]||""));
+    }
+    return rows;
+  }
+  root.DailyRouteCore={optimize,extract,expand};
 })(typeof globalThis==="object"?globalThis:this);
 
 // Daily planner inside original application closure.
@@ -840,10 +852,24 @@ const dailyLayer=L.layerGroup().addTo(map);
 const dailySave=()=>localStorage.setItem(dailyKey,JSON.stringify(daily));
 const dp=document.createElement("section");dp.id="daily-panel";
 dp.style.cssText="display:none;position:absolute;z-index:1250;inset:calc(120px + env(safe-area-inset-top)) 7px calc(76px + env(safe-area-inset-bottom));background:white;border-radius:14px;padding:13px;overflow:auto;box-shadow:0 4px 24px #0005";
-dp.innerHTML='<button class="close" id="daily-close">×</button><h2>📋 Ruta diaria de reparto</h2><p class="note">Fotografía el listado. Revisa las direcciones reconocidas. Una por línea (calle y portal); puedes elegir una zona común. Elimina nombres y códigos.</p><div class="row"><button id="daily-camera">📷 Foto</button><button id="daily-gallery">Fotos</button></div><input id="daily-photo" type="file" accept="image/*" capture="environment" hidden><input id="daily-pictures" type="file" accept="image/*" hidden><label for="daily-locality" style="font-size:13px;font-weight:700">Zona del listado (si no figura en las filas)</label><select id="daily-locality" style="width:100%;margin:5px 0 8px;padding:8px;font:inherit"><option value="">Indicar localidad en cada dirección</option><option>San Miguel de Abona</option><option>Las Zocas</option><option>Aldea Blanca</option><option>El Roque</option><option>Tamaide</option><option>El Frontón</option><option>Las Chafiras</option><option>Llano del Camello</option><option>Guargacho</option><option>Oroteanda</option><option>Golf del Sur</option><option>Vilaflor</option><option>San Isidro</option></select><textarea id="daily-text" rows="6" style="width:100%;font:inherit;padding:8px" placeholder="Calle Alfonso Mejías 62, San Miguel de Abona"></textarea><p class="note" id="daily-msg" role="status"></p><div class="row"><button id="daily-office">Desde Correos</button><button id="daily-gps">Desde mi GPS</button></div><p class="note" id="daily-origin"></p><label style="display:block;font-size:13px;margin:9px 0"><input type="checkbox" id="daily-consent"> Consultar CartoCiudad y enviar coordenadas al servicio OSRM de demostración. Nunca fotos ni nombres.</label><button id="daily-run" class="yellow" style="width:100%">Localizar y ordenar</button><div class="row"><button id="daily-reorder">Reordenar pendientes</button><button id="daily-next">Siguiente GPS</button></div><div class="row"><button id="daily-map">Ver mapa de paradas</button><button id="daily-clear">Borrar ruta</button></div><div id="daily-list"></div>';
+dp.innerHTML='<button class="close" id="daily-close">×</button><h2>📋 Ruta diaria de reparto</h2><p class="note">Fotografía el listado. Revisa las direcciones reconocidas. Una por línea (calle y portal); puedes elegir una zona común. Elimina nombres y códigos.</p><div class="row"><button id="daily-camera">📷 Foto</button><button id="daily-gallery">Fotos</button></div><input id="daily-photo" type="file" accept="image/*" capture="environment" hidden><input id="daily-pictures" type="file" accept="image/*" hidden><label for="daily-locality" style="font-size:13px;font-weight:700">Zona del listado (si no figura en las filas)</label><select id="daily-locality" style="width:100%;margin:5px 0 8px;padding:8px;font:inherit"><option value="">Indicar localidad en cada dirección</option><option>San Miguel de Abona</option><option>Las Zocas</option><option>Aldea Blanca</option><option>El Roque</option><option>Tamaide</option><option>El Frontón</option><option>Las Chafiras</option><option>Llano del Camello</option><option>Guargacho</option><option>Oroteanda</option><option>Golf del Sur</option><option>Vilaflor</option><option>San Isidro</option></select><textarea id="daily-text" rows="6" style="width:100%;font:inherit;padding:8px" placeholder="Calle Alfonso Mejías 62, San Miguel de Abona"></textarea><p class="note" id="daily-msg" role="status"></p><div id="daily-vision-info" style="font-size:13px;margin:6px 0"></div><label style="display:block;font-size:13px;margin:8px 0"><input type="checkbox" id="daily-vision-consent"> Autorizar envío de foto a mi lector IA privado (mi ordenador, mediante conexión cifrada). Sin nombres ni códigos.</label><div class="row"><button id="daily-office">Desde Correos</button><button id="daily-gps">Desde mi GPS</button></div><p class="note" id="daily-origin"></p><label style="display:block;font-size:13px;margin:9px 0"><input type="checkbox" id="daily-consent"> Consultar CartoCiudad y enviar coordenadas al servicio OSRM de demostración. Nunca fotos ni nombres.</label><button id="daily-run" class="yellow" style="width:100%">Localizar y ordenar</button><div class="row"><button id="daily-reorder">Reordenar pendientes</button><button id="daily-next">Siguiente GPS</button></div><div class="row"><button id="daily-map">Ver mapa de paradas</button><button id="daily-clear">Borrar ruta</button></div><div id="daily-list"></div>';
 document.body.appendChild(dp);
 const dbtn=document.createElement("button");dbtn.innerHTML="📋<br>Ruta diaria";dbtn.style.background='#ffce26';dbtn.style.color='#102b46';document.querySelector('#menu').appendChild(dbtn);
 const dm=t=>$("daily-msg").textContent=t;
+let vision={};try{vision=JSON.parse(sessionStorage.getItem("daily-vision")||"{}")}catch(e){}
+const pairing=new URLSearchParams(location.hash.slice(1));
+if(pairing.has("ocr")&&pairing.has("key")){
+ const endpoint=pairing.get("ocr"),key=pairing.get("key");
+ if(/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(endpoint)&&/^[a-f0-9]{64}$/.test(key)){
+ vision={endpoint,key};sessionStorage.setItem("daily-vision",JSON.stringify(vision));history.replaceState(null,"",location.pathname+location.search);
+ }
+}
+$("daily-vision-info").textContent=vision.endpoint?"Lector manuscrito IA privado conectado (requiere PC encendido).":"Lector impreso local. Para manuscritos, abre el enlace privado de conexión IA.";
+function photoDataUrl(file){return new Promise(async(ok,no)=>{try{
+ const bitmap=await createImageBitmap(file),canvas=document.createElement("canvas"),scale=Math.min(1,2300/Math.max(bitmap.width,bitmap.height));
+ canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();ok(canvas.toDataURL("image/jpeg",.88))
+ }catch(e){no(e)}})}
+
 let dailyOrigin=daily.origin||null;
 const showOrigin=()=>$("daily-origin").textContent=dailyOrigin?"Salida: "+dailyOrigin.name+" · "+dailyOrigin.lat.toFixed(5)+", "+dailyOrigin.lon.toFixed(5):"Salida: Correos, Alfonso Mejías 4 (por verificar).";
 dbtn.onclick=()=>{closePanels();dp.style.display="block";showOrigin();renderDaily()};
@@ -855,11 +881,21 @@ function currentPosition(){return new Promise((ok,no)=>navigator.geolocation.get
 $("daily-gps").onclick=async()=>{try{dailyOrigin=await currentPosition();showOrigin()}catch(e){dm(e.message)}};
 async function readDailyPhoto(file){
  if(!file)return;try{
- dm("Leyendo foto localmente…");const worker=await getPhotoWorker(),bitmap=await createImageBitmap(file),canvas=document.createElement("canvas");
+ if(vision.endpoint){
+ if(!$("daily-vision-consent").checked){dm("Autoriza primero la lectura IA privada y vuelve a elegir la foto.");return}
+ dm("Leyendo manuscrito con IA privada…");
+ const image=await photoDataUrl(file);
+ const r=await fetch(vision.endpoint+"/ocr",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+vision.key},body:JSON.stringify({image}),signal:AbortSignal.timeout(190000)});
+ const data=await r.json();if(!r.ok||!data.text)throw Error(data.error||"Lector IA no disponible");
+ const lines=DailyRouteCore.expand(data.text);
+ $("daily-text").value=lines.join("\n");
+ dm("IA: "+lines.length+" entregas reconocidas. Revisa números y nombres marcados [REVISAR].");return
+ }
+ dm("Leyendo texto impreso…");const worker=await getPhotoWorker(),bitmap=await createImageBitmap(file),canvas=document.createElement("canvas");
  const scale=Math.min(1,3000/Math.max(bitmap.width,bitmap.height));canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);
  const ctx=canvas.getContext("2d");ctx.filter="grayscale(100%) contrast(135%)";ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
  const {data}=await worker.recognize(canvas);
- $("daily-text").value=[$("daily-text").value,DailyRouteCore.extract(data.text)].filter(Boolean).join("\n");
+ if((data.confidence||0)<55){dm("Lectura no fiable. Usa el enlace privado IA para manuscritos o pega texto. No se ha importado basura.");return} $("daily-text").value=DailyRouteCore.expand(data.text).join("\n");
  dm("Revisa todas las filas; la escritura manual puede dar errores.");
  }catch(e){dm("OCR no disponible: "+e.message+". Puedes escribir las direcciones.")}
 }
@@ -876,8 +912,11 @@ async function dailyOfficial(q){
  }return [];
 }
 async function resolveDaily(raw){
- let q=parseQuery(raw.replace(/^(C\/|CL\.)\s*/i,'Calle '));if(q.num&&!q.locality&&$('daily-locality').value)q=parseQuery(q.street+' '+q.num+', '+$('daily-locality').value);const loc=normalized(q.locality),area=Object.entries(areas).find(([k])=>normalized(k)===loc);
- if(!q.num||!q.street||!area||!/^(calle|c\/|cl\.?|camino|cmno\.?|avenida|avda\.?|carretera|plaza|pasaje|callej[oó]n|traves[ií]a|paseo)\s+/i.test(q.street))return {raw,error:"Revisar: calle, número y localidad requeridos"};
+ if(/\[REVISAR\]/i.test(raw))return {raw,error:"Lectura dudosa: confirma la calle o el número"};
+ let cleaned=raw.replace(/^(C\/|CL\.)\s*/i,"Calle ").replace(/^(Ctra\.?|Cta\.?)\s+/i,"Carretera ").replace(/^(Gral\.?)\s+/i,"Carretera General ").replace(/\bGral\.?\s+/i,"General ").replace(/\bHdez\.?\s+/i,"Hernández ");
+ if(!/^(calle|camino|cmno\.?|avenida|avda\.?|carretera|plaza|pasaje|callej[oó]n|traves[ií]a|transversal|paseo)\s+/i.test(cleaned))cleaned="Calle "+cleaned;
+ let q=parseQuery(cleaned);if(q.num&&!q.locality&&$('daily-locality').value)q=parseQuery(q.street+' '+q.num+', '+$('daily-locality').value);const loc=normalized(q.locality),area=Object.entries(areas).find(([k])=>normalized(k)===loc);
+ if(!q.num||!q.street||!area||!/^(calle|c\/|cl\.?|camino|cmno\.?|avenida|avda\.?|carretera|plaza|pasaje|callej[oó]n|traves[ií]a|transversal|paseo)\s+/i.test(q.street))return {raw,error:"Revisar: calle, número y localidad requeridos"};
  [q.municipality,q.population]=area[1];q.population=normalized(q.population);q.street=q.street.replace(/^(c\/|cl\.?)\s+/i,"Calle ");
  const opts=[];
  for(const f of matchList(unique(storedAddresses().concat(app.liveAddresses)),q)){
@@ -916,10 +955,10 @@ function renderDaily(){
  if(daily.geometry?.length>1)L.polyline(daily.geometry,{color:'#1969af',weight:5,opacity:.8}).addTo(dailyLayer);
  for(const s of daily.stops){
  const row=document.createElement("div");row.className="entry";const head=document.createElement("strong");
- head.textContent=s.error?"⚠ "+s.raw:s.done?"✓ "+s.name:(++n)+". "+s.name;row.appendChild(head);
+ head.textContent=s.error?"⚠ "+s.raw:s.done?"✓ "+s.name:(++n)+". "+s.name; if(!s.error&&s.count>1)head.textContent+=" · "+s.count+" entregas";row.appendChild(head);
  if(s.error){const note=document.createElement("p");note.className="note";note.textContent=s.error;row.appendChild(note);
  const edit=document.createElement("button");edit.textContent="Corregir portal";edit.onclick=async()=>{const v=prompt("Dirección completa",s.raw);if(!v)return;if(!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}try{const fix=await resolveDaily(v.trim());if(!fix.error){const others=daily.stops.filter(x=>x!==s&&!x.error&&!x.done);if(!dailyOrigin)throw Error("Selecciona origen");const result=await orderDaily([...others,fix]);daily={origin:dailyOrigin,geometry:result.geometry,stops:[...daily.stops.filter(x=>x.done),...result.ordered,...daily.stops.filter(x=>x!==s&&x.error)]};}else Object.assign(s,fix);dailySave();renderDaily();showOrigin()}catch(e){dm(e.message)}};row.appendChild(edit)}
- else{if(s.done)done++;const b=document.createElement("button");b.textContent=s.done?"Pendiente":"Entregada";b.onclick=()=>{s.done=!s.done;dailySave();renderDaily()};row.appendChild(b);
+ else{if(s.done)done++;const b=document.createElement("button");b.textContent=s.done?"Pendiente":s.count>1?"Entregadas ("+s.count+")":"Entregada";b.onclick=()=>{s.done=!s.done;dailySave();renderDaily()};row.appendChild(b);
  for(const [label,url] of [[" GPS Apple",voiceRoute(s)],[" · Google",navLink("google",s)]]){const a=document.createElement("a");a.textContent=label;a.href=url;a.target="_blank";a.rel="noopener";row.appendChild(a)}
  if(!s.done)L.marker([s.lat,s.lon],{icon:L.divIcon({className:"number-icon",html:'<span class="num">'+n+'</span>',iconSize:[1,1]})}).addTo(dailyLayer).bindPopup(safe(s.name));
  }root.appendChild(row);
@@ -935,15 +974,18 @@ async function runDaily(reorder=false){
  let all;
  if(reorder)all=daily.stops;
  else{
- const lines=$("daily-text").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ const lines=DailyRouteCore.expand($("daily-text").value);
  if(!lines.length)throw Error("Introduce o fotografía el listado.");
  if(daily.stops.length&&!confirm("¿Sustituir la ruta guardada?"))return;
  all=[];for(let i=0;i<lines.length;i++){dm("Verificando "+(i+1)+"/"+lines.length);all.push(await resolveDaily(lines[i]))}
  }
  const pending=all.filter(x=>!x.error&&!x.done);
+ const grouped=[];
+ for(const p of pending){const existing=grouped.find(x=>x.num===p.num&&normalized(x.name)===normalized(p.name)&&distance([x.lat,x.lon],[p.lat,p.lon])<12);
+ if(existing)existing.count=(existing.count||1)+(p.count||1);else grouped.push({...p,count:p.count||1})}
  if(!pending.length){if(!reorder){daily={origin:dailyOrigin,stops:all};dailySave();renderDaily()}throw Error("No hay portales pendientes verificados")}
  dm("Calculando orden por carretera…");
- const {ordered,geometry}=await orderDaily(pending);
+ const {ordered,geometry}=await orderDaily(grouped);
  daily={origin:dailyOrigin,geometry,stops:[...all.filter(x=>x.done),...ordered,...all.filter(x=>x.error)]};dailySave();renderDaily();showOrigin();
  dm(ordered.length+' paradas ordenadas; '+all.filter(x=>x.error).length+' sin verificar. '+(geometry?'Trazado vial disponible. ':'Trazado no disponible. ')+'Respeta la señalización real.');
  }catch(e){dm(e.message+" · No se ha inventado ninguna ruta.")}finally{btn.disabled=rb.disabled=false}
