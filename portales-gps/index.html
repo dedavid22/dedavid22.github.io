@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffce26"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Portales GPS">
+<title>Portales GPS Tenerife · Correos</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overscroll-behavior:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17304a;background:#e4e9ee}button,input,select{font:inherit}button{cursor:pointer}
+#map{position:absolute;inset:0;background:#e8eef0;z-index:0}.leaflet-container{font-family:inherit!important}.leaflet-control-zoom{margin-top:155px!important}.leaflet-control-zoom a{height:38px!important;width:38px!important;line-height:38px!important}.leaflet-control-attribution{font-size:9px!important;margin-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+header{position:absolute;z-index:1000;top:0;left:0;right:0;background:#fff;box-shadow:0 3px 12px #0003;padding:calc(7px + env(safe-area-inset-top)) 9px 9px}h1{font-size:15px;margin:0 0 8px;font-weight:800}:root{color-scheme:light}header{background:#fff!important}#q,#scan-address{background:#fff!important;color:#17304a!important;-webkit-text-fill-color:#17304a!important}#search-form{display:flex;gap:6px}#scan-label{flex:0 0 46px;min-width:46px;border:0;border-radius:9px;background:#173f5c;color:white;font-size:23px;min-height:44px;padding:0}#q{min-width:0;flex:1;border:1px solid #aab7c5;border-radius:9px;padding:11px 10px;font-size:16px;color:#17304a}button.yellow{background:#ffce26;color:#102b46;border:0;border-radius:9px;font-weight:800;padding:10px 13px}#status{font-size:12px;color:#435467;line-height:1.3;margin:6px 0 0;min-height:15px}.warn{color:#ae241e!important;font-weight:700}
+#menu{position:absolute;z-index:999;bottom:0;left:0;right:0;background:#fff;display:flex;gap:5px;box-shadow:0 -2px 9px #0002;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}#menu button{flex:1;min-width:0;background:#153452;color:#fff;border:0;border-radius:9px;font-size:12px;font-weight:730;min-height:53px;padding:5px}.offlinebtn{background:#ffd226!important;color:#1b3347!important}#results{position:absolute;z-index:1101;display:none;top:calc(120px + env(safe-area-inset-top));left:8px;right:8px;max-height:48%;overflow:auto;border-radius:12px;box-shadow:0 6px 20px #0004;background:#fff}#results button{border:0;border-bottom:1px solid #d7dce2;display:block;width:100%;text-align:left;background:#fff;padding:12px;color:#17304a;font-size:13px;line-height:1.4}
+#panel,#zones,#stops,#scan-panel{display:none;position:absolute;z-index:1102;left:7px;right:7px;bottom:calc(76px + env(safe-area-inset-bottom));background:white;border-radius:14px;padding:13px;box-shadow:0 4px 24px #0005;max-height:65vh;overflow:auto}#zones,#stops{top:calc(127px + env(safe-area-inset-top));}#scan-panel{z-index:1200;top:calc(125px + env(safe-area-inset-top));bottom:auto;max-height:70vh;overflow:auto}#scan-address{width:100%;padding:13px;font-size:17px;border:2px solid #ffce26;border-radius:9px;outline-color:#e1aa00}#scan-action{width:100%;min-height:52px;margin-top:10px}#scan-progress{font-weight:700;color:#1e4260;margin-bottom:8px}#scan-photo{font-size:12px;color:#455d71}#scan-note{color:#9f341d;font-weight:700}h2{font-size:18px;margin:4px 29px 10px 0}p.note{font-size:12px;line-height:1.45;color:#506273;margin:6px 0}button.close{position:absolute;top:10px;right:9px;border:0;border-radius:7px;padding:5px 9px;background:#e7eaee;font-size:18px}.links{display:flex;gap:8px;margin:10px 0}.links a{flex:1;background:#193958;color:white;text-decoration:none;text-align:center;font-weight:800;font-size:14px;border-radius:10px;padding:14px 5px}.links a:first-child{background:#1969af}.row{display:flex;gap:7px;margin:8px 0;align-items:center}.row>*{min-width:0}.row input,.row select{flex:1;padding:10px 8px;border:1px solid #a9b5c2;border-radius:8px;font-size:15px}.row button{background:#ffcf27;border:0;border-radius:8px;padding:11px;font-weight:800}.subbutton{background:#dde6ec!important;font-weight:700!important}.entry{border-bottom:1px solid #e0e4e8;padding:8px 0;font-size:14px}.entry strong{display:block}.entry button{margin:6px 4px 0 0;background:#e6eff6;border:0;padding:8px;border-radius:7px;font-weight:700;color:#153452}
+.number-icon{background:transparent;border:0}.num{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;background:#fffbd6;border:1px solid #47586a;border-radius:5px;box-shadow:0 1px 3px #0005;padding:2px 4px;color:#182e3f;font-size:12px;font-weight:900;min-width:20px;text-align:center}.num.highlight{background:#ffcf27;border:2px solid #da3535;font-size:15px}.streetname{font-size:12px;color:#1a3045;background:#fffff2f2;border:1px solid #a8b7c4;border-radius:4px;padding:2px 5px;font-weight:800;white-space:nowrap;box-shadow:0 1px 2px #0002;transform:translate(-50%,-50%)}.mygps{background:#2186f9;width:17px;height:17px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 5px #3187e944}.offline-pill{position:absolute;z-index:900;bottom:calc(90px + env(safe-area-inset-bottom));left:8px;background:#fffbe3;border:1px solid #d8be54;color:#263d4e;border-radius:20px;padding:5px 8px;font-size:11px;font-weight:700;display:none}
+</style>
+</head><body>
+<div id="map"></div>
+<header><h1>📍 Portales GPS Tenerife · reparto</h1><form id="search-form"><input id="q" type="search" placeholder="Calle Iglesia 7, San Miguel" enterkeyhint="search" autocomplete="off" aria-label="Buscar calle y número"><button id="scan-label" type="button" aria-label="Fotografiar dirección de Correos" title="Fotografiar etiqueta">📷</button><button class="yellow" type="submit">Buscar</button></form><input id="scan-file" type="file" accept="image/*" capture="environment" hidden><input id="scan-gallery" type="file" accept="image/*" hidden><p id="status" role="status">Iniciando callejero…</p></header>
+<div id="results"></div>
+<div id="scan-panel"><button class="close" data-close>×</button><h2>📷 Leer etiqueta de Correos</h2>
+<p id="scan-progress" role="status">Selecciona una foto con la dirección.</p>
+<p class="note">La lectura se realiza en este iPhone. No enviamos la foto ni el nombre del destinatario a nuestro servidor.</p>
+<label for="scan-address" style="display:block;font-weight:700;margin:10px 0 5px">Dirección reconocida (comprueba calle y número)</label>
+<input id="scan-address" autocomplete="off" placeholder="Ej.: Calle de la Iglesia 7, San Miguel de Abona">
+<p id="scan-note" class="note">Comprueba especialmente el número del portal. Piso y puerta no forman parte de la ruta GPS.</p>
+<button class="yellow" id="scan-action">🔎 Buscar este portal</button>
+<div class="row"><button id="scan-another" class="subbutton">📷 Repetir foto</button><button id="scan-gallery-button" class="subbutton">🖼 Elegir de Fotos</button></div>
+<p id="scan-photo" class="note">En etiquetas borrosas, puedes corregir la dirección antes de buscar. No se guarda la imagen.</p></div>
+<div id="offline-pill" class="offline-pill">Mapa guardado en el iPhone</div>
+<div id="panel"><button class="close" data-close>×</button><h2 id="destination">Portal</h2><p id="coordinate" class="note"></p><a id="apple-voice" target="_blank" rel="noopener" style="display:block;text-decoration:none;text-align:center;background:#ffce26;color:#102b46;border:0;border-radius:10px;padding:15px 8px;font-size:16px;font-weight:900;margin:9px 0">🔊 INICIAR NAVEGACIÓN CON VOZ</a><p class="note">Apple Maps intentará iniciar la ruta por carretera. Conecta antes el intercomunicador Bluetooth del casco y verifica el volumen.</p><div class="links"><a id="google-route" target="_blank" rel="noopener">▶ Google Maps</a><a id="apple-route" target="_blank" rel="noopener">↗ Apple Maps</a></div><button class="yellow" id="offline-route" style="width:100%;padding:14px">⌁ Trazar recorrido sin conexión</button><p class="note">Recorrido offline orientativo: no comprueba giros prohibidos, sentidos únicos ni accesos. Para navegación por voz sin red, utiliza CoMaps con Tenerife descargado.</p><div class="row"><input id="stop-label" placeholder="Nombre de parada"><button id="save-stop">Guardar</button></div></div>
+<div id="zones"><button class="close" data-close>×</button><h2>Mapas sin conexión · reparto completo</h2><p class="note"><b>San Miguel de Abona + acceso a Vilaflor + Golf del Sur.</b> Descarga los sectores antes del reparto con Wi-Fi. Se guardan carreteras y portales oficiales, con nombres de vías disponibles. No necesitas descargar uno por uno.</p>
+<div style="border:2px solid #ffce26;border-radius:12px;padding:10px;margin-bottom:12px;background:#fffbed">
+<strong style="font-size:15px">🛵 Corredor completo: Vilaflor → Golf del Sur</strong>
+<p class="note">Incluye zona alta, El Frontón, San Miguel casco, El Roque, Tamaide, Las Zocas, Aldea Blanca, Oroteanda, Llano del Camello, Las Chafiras, Guargacho y costa. Descargarás varios sectores consecutivos y podrás reanudar los que falten.</p>
+<button class="yellow" id="download-corridor" style="width:100%;padding:14px">⬇ Preparar TODO el reparto sin conexión</button>
+<button id="stop-corridor" style="width:100%;margin-top:7px;display:none;background:#e7ebef;border:0;padding:10px;border-radius:8px;font-weight:700">Detener después del sector actual</button>
+<p id="corridor-progress" class="note" role="status">Ninguna descarga iniciada.</p>
+<div class="row"><button class="subbutton" id="see-corridor">Ver toda la zona</button><button class="subbutton" id="see-sanmiguel">Ir a San Miguel casco</button></div>
+</div>
+<p class="note"><b>O descarga una zona adicional concreta:</b> centra el mapa, elige el radio y pulsa descargar.</p>
+<div class="row"><input id="zone-name" value="Mi zona de reparto" aria-label="Nombre de zona"><select id="radius" aria-label="Radio de la zona"><option value=".75">750 m</option><option value="1.25" selected>1,25 km</option><option value="2">2 km</option></select></div>
+<button class="yellow" id="download" style="width:100%;padding:13px">⬇ Descargar zona centrada en mapa</button><p id="progress" class="note"></p>
+<div class="row"><button id="offline-toggle" class="yellow">🗺 Probar mapa descargado</button><button id="online-toggle" class="subbutton">🌐 Ver mapa online</button></div>
+<div id="zone-list"></div><p class="note">Las calles y portales almacenados pueden quedar desactualizados. Requiere internet para descargarlos. La ubicación GPS funciona sin datos móviles con la app abierta. Safari puede borrar datos guardados si falta espacio.</p>
+<p class="note">Datos: <a href="https://www.cartociudad.es/web/portal/faq" target="_blank" rel="noopener">CartoCiudad, IGN · CC BY 4.0</a> y <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. No usamos descargas masivas del servidor de teselas de OSM.</p></div>
+<div id="stops"><button class="close" data-close>×</button><h2>Mis paradas</h2><div id="stop-list"></div><p class="note">Solo en este iPhone. Pulsa un número del mapa o busca una calle para guardar la parada.</p></div>
+<nav id="menu"><button id="gps">⌖<br>Mi GPS</button><button class="offlinebtn" id="open-zones">⬇<br>Sin conexión</button><button id="open-stops">☑<br>Paradas</button><button id="numbers">№<br>Portales ON</button></nav>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+// San Miguel casco: el usuario reparte por todo el corredor, no únicamente San Isidro.
+const DEFAULT=[28.0992051,-16.6167914];
+const CORRIDOR_BOUNDS=[[28.007,-16.669],[28.177,-16.586]];
+const map=L.map("map",{zoomControl:false,preferCanvas:true}).setView(DEFAULT,16);
+L.control.zoom({position:"topright"}).addTo(map);
+const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:21,maxNativeZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+const roadsLayer=L.layerGroup().addTo(map), labelsLayer=L.layerGroup().addTo(map), numbersLayer=L.layerGroup().addTo(map), routeLayer=L.layerGroup().addTo(map), pinLayer=L.layerGroup().addTo(map);
+const roadCanvas=L.canvas({padding:0.25});
+const LOCATIONS=[["Vilaflor",28.1590955,-16.6365089],["San Miguel casco",28.0992051,-16.6167914],["El Roque",28.0935886,-16.6356061],["La Montañita",28.0964973,-16.61081265],["Las Chafiras",28.0478736,-16.6227498],["Golf del Sur",28.0307407,-16.602699]];
+const app={zones:[],liveAddresses:[],offlineView:false,numbersOn:true,busy:false,packCancel:false,packRunning:false,gps:null,gpsMarker:null,gpsWatch:null,followGPS:false,searchFocus:false,target:null,seq:0,refreshTimer:null,route:null};
+const DB="portales-gps-tenerife",STORE="zones";
+function status(s,warn=false){$("status").textContent=s;$("status").className=warn?"warn":""}
+function safe(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function normalized(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/\b(CALLE|CALLEJON|AVENIDA|AVDA|CAMINO|CARRETERA|PASAJE|PLAZA|DE|DEL|LA|LAS|LOS|EL|Nº|NUMERO|N)\b/g," ").replace(/[^A-Z0-9]+/g," ").replace(/\s+/g," ").trim()}
+function pnum(p){return String(p.locator_designator_addressNumber||"")+(p.locator_designator_addressNumberExtension||"")}
+function labelOf(f){let p=f.properties||{};return[p.component_ThoroughfareName||"Dirección",pnum(p),p.component_AddressAreaName||p.component_AdminUnitName_4||"Tenerife"].filter(Boolean).join(" ")}
+function pointOf(f){return [f.geometry.coordinates[1],f.geometry.coordinates[0]]}
+function unique(arr){const ids=new Set();return arr.filter(f=>{let k=f.id||JSON.stringify(f.geometry.coordinates).slice(0,100);if(ids.has(k))return false;ids.add(k);return true})}
+function inView(f,b){let a=f.geometry.coordinates;return a[0]>=b.getWest()&&a[0]<=b.getEast()&&a[1]>=b.getSouth()&&a[1]<=b.getNorth()}
+function dbOpen(){return new Promise((resolve,reject)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:"id"});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+async function dbAll(){const db=await dbOpen();return new Promise((resolve,reject)=>{let tx=db.transaction(STORE);let req=tx.objectStore(STORE).getAll();req.onsuccess=()=>{resolve(req.result||[]);db.close()};req.onerror=()=>reject(req.error)})}
+async function dbPut(value){let db=await dbOpen();return new Promise((resolve,reject)=>{let tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(value);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>reject(tx.error)})}
+async function dbDelete(id){let db=await dbOpen();return new Promise((resolve,reject)=>{let tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>reject(tx.error)})}
+const storedAddresses=()=>unique(app.zones.flatMap(z=>z.addresses||[]));
+const storedRoads=()=>unique(app.zones.flatMap(z=>z.roads||[]));
+function closePanels(){$("results").style.display="none";for(const id of ["panel","zones","stops","scan-panel"])$(id).style.display="none"}
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closePanels);
+function openPanel(id){closePanels();$(id).style.display="block"}
+function navLink(service,t){let dest=encodeURIComponent(t.lat+","+t.lon);return service==="google"?"https://www.google.com/maps/dir/?api=1&destination="+dest+"&travelmode=driving":"https://maps.apple.com/directions?destination="+dest+"&mode=driving"}
+function voiceRoute(t){return "https://maps.apple.com/directions?destination="+encodeURIComponent(t.lat+","+t.lon)+"&mode=driving&start=5"}
+function showTarget(lat,lon,name){app.followGPS=false;app.searchFocus=true;app.target={lat,lon,name};$("destination").textContent=name;$("coordinate").textContent="Destino: "+lat.toFixed(6)+", "+lon.toFixed(6);$("google-route").href=navLink("google",app.target);$("apple-route").href=navLink("apple",app.target);$("apple-voice").href=voiceRoute(app.target);$("stop-label").value=name;routeLayer.clearLayers();pinLayer.clearLayers();L.circleMarker([lat,lon],{radius:9,color:"#d7292d",weight:3,fillColor:"#ffd226",fillOpacity:1}).addTo(pinLayer);openPanel("panel")}
+
+// Fotografía local: OCR en navegador con Tesseract.js. Solo se utiliza la dirección,
+// nunca la información del destinatario ni el código de seguimiento.
+let photoWorker=null,photoLoading=null;
+const OCR_CDN="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js";
+function photoStatus(text){$("scan-progress").textContent=text}
+function loadPhotoLibrary(){
+ if(window.Tesseract)return Promise.resolve();
+ if(photoLoading)return photoLoading;
+ photoLoading=new Promise((resolve,reject)=>{
+  let script=document.createElement("script");script.src=OCR_CDN;script.async=true;
+  script.onload=()=>window.Tesseract?resolve():reject(Error("Motor OCR no disponible"));
+  script.onerror=()=>reject(Error("No se pudo descargar el lector de etiquetas. Requiere internet la primera vez."));
+  document.head.appendChild(script);
+ }).catch(e=>{photoLoading=null;throw e});
+ return photoLoading;
+}
+async function getPhotoWorker(){
+ if(photoWorker)return photoWorker;
+ await loadPhotoLibrary();
+ // Modelo de español. El texto se procesa localmente en el dispositivo.
+ photoWorker=await window.Tesseract.createWorker("spa",1,{
+  logger:m=>{if(m.status==="recognizing text"&&m.progress!=null)photoStatus("Leyendo etiqueta… "+Math.round(m.progress*100)+" %")}
+ });
+ return photoWorker;
+}
+function extractPostalAddress(ocrText){
+ const text=String(ocrText||"").replace(/\u00a0/g," ").replace(/[|]/g,"I");
+ let lines=text.toUpperCase().split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
+ const cityLine=lines.find(x=>/38620|SAN MIGUEL DE ABONA/i.test(x))||"";
+ const zip=(text.match(/\b38\d{3}\b/)||[])[0]||"";
+ let town=/SAN ISIDRO/i.test(text)?"San Isidro":
+   /SAN MIGUEL/i.test(text)||zip==="38620"?"San Miguel de Abona":
+   /GRANADILLA/i.test(text)?"Granadilla de Abona":
+   /VILAFLOR/i.test(text)?"Vilaflor":
+   "San Miguel de Abona";
+ let candidates=lines.filter(x=>/(?:^|\s)(?:C\/|CL\.?|CALLE|CM\.?|CAMINO|CTRA\.?|CARRETERA|AV\.?|AVENIDA|PASAJE|LG\.?|LUGAR|DISEMINADO|URB\.?|URBANIZACI[ÓO]N)(?:\s|$)/i.test(x));
+ // Si la etiqueta dice "CL DE LA IGLESIA 7 4", el 4 se considera posible
+ // piso/puerta y nunca se concatena en un supuesto portal 74.
+ candidates.sort((a,b)=>((b.match(/\b\d{1,4}[A-Z]?\b/g)||[]).length>0?1:0)-((a.match(/\b\d{1,4}[A-Z]?\b/g)||[]).length>0?1:0));
+ let selected=candidates[0]||"";
+ if(!selected){
+  let alt=lines.find(x=>/\b(?:IGLESIA|MONTAÑITA|DESEADA|LANZAROTE)\b/i.test(x));
+  if(alt)selected="CALLE "+alt;
+ }
+ // Eliminar posibles CP y localidad si el OCR los juntó en la misma línea.
+ selected=selected.replace(/\b38\d{3}\b.*$/,"").replace(/\bSAN MIGUEL DE ABONA\b.*$/,"").trim();
+ selected=selected.replace(/^CL[.\s]+/,"Calle ").replace(/^C\/\s*/,"Calle ").replace(/^CM[.\s]+/,"Camino ")
+   .replace(/^CTRA[.\s]+/,"Carretera ").replace(/^AV[.\s]+/,"Avenida ");
+ const m=selected.match(/^(.*?)\s*,?\s+(\d{1,4}[A-Z]?)(?:[\s,]+(\d{1,2}[A-Z]?))?\s*$/i);
+ if(!m)return {address:"",note:"No he podido identificar con seguridad la calle y número. Puedes escribirlos tú."};
+ let street=m[1].trim(),portal=m[2],extra=m[3];
+ if(!street||street.length<5)return {address:"",note:"No se ha podido reconocer bien el nombre de la calle."};
+ const pretty=street.replace(/\s+/g," ").replace(/^CALLE\s+/i,"Calle ").replace(/^CAMINO\s+/i,"Camino ");
+ const address=pretty+" "+portal+", "+town;
+ return {address,note:extra?"He leído un «"+extra+"» después del nº "+portal+". Podría ser piso o puerta; compruébalo antes de navegar.":"Verifica la dirección reconocida antes de iniciar la ruta.",zip};
+}
+async function preparePhoto(file){
+ if(!file||!file.type.startsWith("image/")){photoStatus("Elige una fotografía de la etiqueta.");return}
+ openPanel("scan-panel");
+ $("scan-action").disabled=true;$("scan-address").value="";
+ photoStatus("Preparando la foto…");
+ try{
+  // Límite de resolución y aumento de contraste para no saturar memoria en iPhone.
+  const bitmap=await createImageBitmap(file);
+  let scale=Math.min(2,1800/Math.max(bitmap.width,bitmap.height));
+  scale=Math.min(scale,2);
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const ctx=canvas.getContext("2d",{willReadFrequently:false});
+  ctx.filter="grayscale(100%) contrast(145%)";
+  ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  if(bitmap.close)bitmap.close();
+  photoStatus("Cargando lector de texto (primera vez necesita internet)…");
+  const worker=await getPhotoWorker();
+  const data=await worker.recognize(canvas);
+  const value=extractPostalAddress(data.data.text);
+  $("scan-address").value=value.address;
+  $("scan-note").textContent=value.note;
+  if(value.address){
+   photoStatus("✓ Dirección encontrada. Comprueba el nº y pulsa Buscar.");
+  }else{
+   photoStatus("No se ha leído bien la etiqueta. Puedes repetir la foto o escribir la dirección.");
+  }
+ }catch(e){
+  photoStatus("Error al leer la foto: "+(e&&e.message?e.message:"OCR no disponible"));
+  $("scan-note").textContent="Puedes copiar el texto con «Texto en vivo» de Fotos y pegarlo en el campo de dirección.";
+ }finally{
+  $("scan-action").disabled=false;
+  $("scan-file").value="";$("scan-gallery").value="";
+ }
+}
+$("scan-label").onclick=()=>{$("scan-file").click()};
+$("scan-another").onclick=()=>{$("scan-file").click()};
+$("scan-gallery-button").onclick=()=>{$("scan-gallery").click()};
+$("scan-file").onchange=e=>preparePhoto(e.target.files&&e.target.files[0]);
+$("scan-gallery").onchange=e=>preparePhoto(e.target.files&&e.target.files[0]);
+$("scan-action").onclick=()=>{
+ const address=$("scan-address").value.trim();
+ if(!address){photoStatus("Escribe o revisa la dirección antes de buscar.");$("scan-address").focus();return}
+ $("q").value=address;
+ closePanels();
+ $("search-form").dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));
+};
+
+map.on("click",e=>showTarget(e.latlng.lat,e.latlng.lng,"Punto elegido"));
+function showStreetLabels(arr,b){
+ labelsLayer.clearLayers();
+ if(map.getZoom()<=16){
+  for(const [name,lat,lon] of LOCATIONS){
+   if(!b.contains([lat,lon]))continue;
+   L.marker([lat,lon],{interactive:false,keyboard:false,icon:L.divIcon({className:"number-icon",html:'<span class="streetname">'+safe(name)+'</span>',iconSize:[1,1]})}).addTo(labelsLayer);
+  }
+ }
+ if(map.getZoom()<15)return;
+ // Las vías de IGN incluyen el nombre en cada dirección; esta capa los muestra
+ // incluso donde las teselas de OSM/Google no están disponibles.
+ const byName=new Map(),taken=[];
+ for(const f of arr){
+  if(!f.geometry||f.geometry.type!=="Point"||!inView(f,b))continue;
+  const p=f.properties||{},name=p.component_ThoroughfareName||"";
+  if(!name||name.length<4)continue;
+  const muni=p.component_AdminUnitName_4||"";
+  const id=normalized(name)+"_"+normalized(muni);
+  if(!byName.has(id))byName.set(id,{name,points:[]});
+  const points=byName.get(id).points;
+  if(points.length<22)points.push(pointOf(f));
+ }
+ // Al alejar, evitar saturación; al acercar, más rótulos identificables.
+ const size=map.getSize(),minDist=map.getZoom()<=16?90:map.getZoom()<=18?105:125;
+ for(const {name,points} of byName.values()){
+  const pos=points[Math.floor(points.length/2)],pixel=map.latLngToContainerPoint(pos);
+  if(pixel.x<40||pixel.x>size.x-40||pixel.y<160||pixel.y>size.y-80)continue;
+  if(taken.some(p=>Math.hypot(p.x-pixel.x,p.y-pixel.y)<minDist))continue;
+  taken.push(pixel);
+  L.marker(pos,{interactive:false,keyboard:false,icon:L.divIcon({className:"number-icon",html:'<span class="streetname">'+safe(name)+'</span>',iconSize:[1,1],iconAnchor:[0,0]})}).addTo(labelsLayer);
+  if(taken.length>=45)break;
+ }
+}
+function showNumbers(){
+ numbersLayer.clearLayers();
+ const arr=app.offlineView?storedAddresses():unique(app.liveAddresses.concat(storedAddresses()));
+ const b=map.getBounds();
+ showStreetLabels(arr,b);
+ if(!app.numbersOn)return;
+ const zoom=map.getZoom();
+ // En los barrios y en carreteras rurales: ver las CALLES primero.
+ // A escala de sector los números son ilegibles y tapan el callejero.
+ if(zoom<18)return;
+ const radius=zoom<=18?31:zoom===19?25:zoom===20?21:17;
+ const reserved=new Set();
+ const center=map.getCenter();
+ const nearby=arr.filter(f=>f.geometry?.type==="Point"&&inView(f,b))
+  .sort((a,b)=>map.distance(pointOf(a),center)-map.distance(pointOf(b),center));
+ let count=0;
+ for(const f of nearby){
+  const xy=pointOf(f),p=f.properties||{},n=pnum(p);
+  if(!n||zoom<20&&/^S[- ]?N$/i.test(n))continue;
+  const px=map.latLngToContainerPoint(xy),gx=Math.round(px.x/radius),gy=Math.round(px.y/radius);
+  if(px.x<8||px.x>map.getSize().x-8||px.y<125||px.y>map.getSize().y-75)continue;
+  let occupied=false;
+  for(let dx=-1;dx<=1&&!occupied;dx++)for(let dy=-1;dy<=1;dy++)if(reserved.has((gx+dx)+":"+(gy+dy))) {occupied=true;break}
+  if(occupied)continue;
+  reserved.add(gx+":"+gy);
+  const icon=L.divIcon({className:"number-icon",html:'<span class="num">'+safe(n)+'</span>',iconSize:[1,1],iconAnchor:[0,0]});
+  L.marker(xy,{icon,keyboard:true}).on("click",e=>{L.DomEvent.stopPropagation(e);showTarget(xy[0],xy[1],labelOf(f))}).addTo(numbersLayer);
+  if(++count>=300)break;
+ }
+}
+function showRoads(){
+ roadsLayer.clearLayers();
+ if(!app.offlineView)return;
+ const bounds=map.getBounds().pad(.3);
+ // Evita crear miles de objetos DOM fuera de pantalla en el iPhone SE.
+ let drawn=0;
+ for(const f of storedRoads()){
+  const geom=f.geometry;if(!geom)continue;
+  const parts=geom.type==="LineString"?[geom.coordinates]:geom.type==="MultiLineString"?geom.coordinates:[];
+  for(const pts of parts){
+   if(!pts||pts.length<2)continue;
+   const line=pts.map(v=>[v[1],v[0]]);
+   if(!line.some(p=>bounds.contains(p)))continue;
+   L.polyline(line,{color:"#97a9b7",weight:7,opacity:.95,interactive:false,renderer:roadCanvas}).addTo(roadsLayer);
+   L.polyline(line,{color:"#fafafa",weight:4,opacity:1,interactive:false,renderer:roadCanvas}).addTo(roadsLayer);
+   if(++drawn>1200)break;
+  }
+  if(drawn>1200)break;
+ }
+}
+function updateView(){
+ if(!navigator.onLine||app.offlineView){app.offlineView=true;if(map.hasLayer(osm))map.removeLayer(osm);$("offline-pill").style.display="block"}
+ else{if(!map.hasLayer(osm))osm.addTo(map);$("offline-pill").style.display="none"}
+ showRoads();showNumbers();
+}
+window.addEventListener("offline",()=>{app.offlineView=true;updateView();status("Sin conexión: mostrando las zonas que descargaste.")});
+window.addEventListener("online",()=>{if(!app.offlineView){updateView();refreshSoon()}});
+$("numbers").onclick=()=>{app.numbersOn=!app.numbersOn;$("numbers").innerHTML=app.numbersOn?"№<br>Portales ON":"№<br>Portales OFF";showNumbers()};
+$("open-zones").onclick=()=>{openPanel("zones");listZones()};
+$("open-stops").onclick=()=>{openPanel("stops");listStops()};
+$("offline-toggle").onclick=()=>{app.offlineView=true;updateView();closePanels();status(storedAddresses().length+" portales guardados disponibles sin conexión.")};
+$("online-toggle").onclick=()=>{if(!navigator.onLine){status("No hay red. Usa el mapa descargado.",true);return}app.offlineView=false;updateView();closePanels();refreshSoon()};
+function bboxFor(lat,lon,km){const dl=km/111.2,dx=km/(111.2*Math.cos(lat*Math.PI/180));return [lon-dx,lat-dl,lon+dx,lat+dl].map(n=>+n.toFixed(6))}
+function isTenerife(b){return b[0]>-17.15&&b[2]<-16.06&&b[1]>27.9&&b[3]<28.67}
+async function collection(coll,b,maxPages,progress){
+ let url="https://api-features.idee.es/collections/"+coll+"/items?bbox="+b.join(",")+"&limit=1000&f=json",features=[],seen=new Set(),pages=0,truncated=false;
+ while(url&&pages<maxPages){
+  pages++;progress(coll,pages);
+  let r=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!r.ok)throw Error("IGN "+coll+": "+r.status);
+  let j=await r.json();if(!Array.isArray(j.features))throw Error("Servicio IGN sin datos GeoJSON");
+  for(let f of j.features){if(f.geometry&&!seen.has(f.id)){seen.add(f.id);features.push(f)}}
+  let next=(j.links||[]).find(x=>x.rel==="next");url=next?new URL(next.href,url).href:null;
+ }
+ if(url)truncated=true;
+ return {features,truncated,pages};
+}
+async function loadZones(){try{app.zones=await dbAll();updateView()}catch(e){status("No se puede acceder al almacenamiento del iPhone.",true)}}
+// Centros verificados o interpolados entre núcleos, con solapamiento
+// para cubrir de la zona alta de Vilaflor a Golf del Sur.
+// Cobertura sistemática: toda la caja municipal referenciada por OpenStreetMap
+// (lat 28.00864..28.13114, lon -16.64348..-16.59675) y acceso a Vilaflor.
+// Dos columnas oeste/este de 1,45 km de radio y seis bandas norte/sur:
+// sin espacios descubiertos dentro del rectángulo del municipio.
+const CORRIDOR_PACKS=[
+ {id:"vilaflor-casco",name:"Vilaflor casco y salida sur",lat:28.1591,lon:-16.6365,km:1.45},
+ {id:"vilaflor-acceso",name:"Carretera de Vilaflor hacia San Miguel",lat:28.1410,lon:-16.6280,km:1.45},
+ {id:"norte-oeste",name:"Zona alta / El Frontón oeste",lat:28.1200,lon:-16.6320,km:1.45},
+ {id:"norte-este",name:"Zona alta / El Frontón este",lat:28.1200,lon:-16.6070,km:1.45},
+ {id:"casco-oeste",name:"San Miguel / El Roque / Tamaide oeste",lat:28.0990,lon:-16.6320,km:1.45},
+ {id:"casco-este",name:"San Miguel casco / La Montañita",lat:28.0990,lon:-16.6070,km:1.45},
+ {id:"medianas-oeste",name:"Las Zocas / medianías oeste",lat:28.0780,lon:-16.6320,km:1.45},
+ {id:"medianas-este",name:"Las Zocas / medianías este",lat:28.0780,lon:-16.6070,km:1.45},
+ {id:"enlaces-oeste",name:"Aldea Blanca / Oroteanda oeste",lat:28.0570,lon:-16.6320,km:1.45},
+ {id:"enlaces-este",name:"Llano del Camello / Las Chafiras norte",lat:28.0570,lon:-16.6070,km:1.45},
+ {id:"baja-oeste",name:"Guargacho / Las Chafiras oeste",lat:28.0360,lon:-16.6320,km:1.45},
+ {id:"baja-este",name:"Las Chafiras sur / Golf del Sur norte",lat:28.0360,lon:-16.6070,km:1.45},
+ {id:"costa-oeste",name:"Amarilla Golf / Guargacho costa",lat:28.0150,lon:-16.6320,km:1.45},
+ {id:"costa-este",name:"Golf del Sur / litoral",lat:28.0150,lon:-16.6070,km:1.45}
+];
+$("see-corridor").onclick=()=>{closePanels();map.fitBounds(CORRIDOR_BOUNDS,{padding:[25,20]});status("Zona completa: Vilaflor → San Miguel → Golf del Sur.")};
+$("see-sanmiguel").onclick=()=>{closePanels();map.setView(DEFAULT,17)};
+$("stop-corridor").onclick=()=>{app.packCancel=true;$("corridor-progress").textContent="Se detendrá cuando acabe el sector en curso; los anteriores quedan guardados."};
+async function downloadPack(p,step,total){
+ const id="corridor-"+p.id;
+ if(app.zones.find(z=>z.id===id&&!z.partial))return {skipped:true};
+ const bbox=bboxFor(p.lat,p.lon,p.km);
+ const say=(phase,page)=>{$("corridor-progress").textContent="Sector "+step+"/"+total+": "+p.name+" · "+(phase==="address"?"portales":"carreteras")+" · página "+page+"…"};
+ const roads=await collection("roadlink",bbox,18,say);
+ const addresses=await collection("address",bbox,22,say);
+ if(!roads.features.length&&!addresses.features.length)throw Error("sin datos geográficos");
+ const value={id,name:p.name,center:[p.lat,p.lon],bbox,roads:roads.features,addresses:addresses.features,date:new Date().toISOString(),partial:roads.truncated||addresses.truncated};
+ await dbPut(value);
+ // No recargar todo IndexedDB por cada página; refrescar al final del sector.
+ app.zones=app.zones.filter(z=>z.id!==id).concat([value]);
+ return {addresses:addresses.features.length,roads:roads.features.length,partial:value.partial};
+}
+$("download-corridor").onclick=async()=>{
+ if(app.busy||app.packRunning)return;
+ if(!navigator.onLine){$("corridor-progress").textContent="Necesitas conexión para preparar el paquete.";return}
+ app.packRunning=true;app.packCancel=false;app.busy=true;
+ $("download-corridor").disabled=true;$("download").disabled=true;$("stop-corridor").style.display="block";
+ let ok=0,skip=0,failed=[],partial=[];
+ const total=CORRIDOR_PACKS.length;
+ try{
+  for(let i=0;i<total;i++){
+   if(app.packCancel)break;
+   const p=CORRIDOR_PACKS[i];
+   try{
+    let res=await downloadPack(p,i+1,total);
+    if(res.skipped)skip++;
+    else{ok++;if(res.partial)partial.push(p.name)}
+   }catch(e){failed.push(p.name+": "+(e?.message||"error de red"))}
+   $("corridor-progress").textContent="Reparto "+(i+1)+"/"+total+" sectores procesados · "+(ok+skip)+" guardados"+(failed.length?" · "+failed.length+" sin completar":"");
+   // No saturar el servicio del IGN; facilitar cancelar y seguir procesando UI.
+   await new Promise(resolve=>setTimeout(resolve,450));
+  }
+  app.zones=await dbAll();
+  updateView();listZones();
+  if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
+  let names=partial.length?" Sectores parciales: "+partial.join(", ")+".":"";
+  let missing=failed.length?" Pendientes: "+failed.map(x=>x.split(":")[0]).join(", ")+".":"";
+  $("corridor-progress").textContent=(app.packCancel?"Descarga detenida. ":"Proceso terminado. ")+(ok+skip)+"/"+total+" sectores disponibles en el iPhone."+names+missing;
+  status((ok+skip)+"/"+total+" sectores descargados. Abre «Probar mapa descargado».",Boolean(failed.length||partial.length));
+ }finally{
+  app.busy=false;app.packRunning=false;$("stop-corridor").style.display="none";
+  $("download-corridor").disabled=false;$("download").disabled=false;app.packCancel=false;
+ }
+};
+
+async function downloadZone(){
+ if(app.busy)return;if(!navigator.onLine){$("progress").textContent="Necesitas Wi-Fi o datos móviles para descargar.";return}
+ let center=map.getCenter(),km=Number($("radius").value),b=bboxFor(center.lat,center.lng,km);
+ if(!isTenerife(b)){$("progress").textContent="Centra primero una zona de Tenerife.";return}
+ app.busy=true;$("download").disabled=true;$("progress").textContent="Preparando descarga oficial de carreteras y portales…";
+ try{
+  const progress=(c,n)=>{$("progress").textContent=(c==="address"?"Números de portal":"Carreteras")+" · paquete "+n+"… No cierres la app."};
+  let roads=await collection("roadlink",b,12,progress);
+  let addresses=await collection("address",b,12,progress);
+  if(!roads.features.length&&!addresses.features.length)throw Error("IGN no devolvió información para esta zona");
+  let z={id:"z"+Date.now(),name:$("zone-name").value.trim()||"Zona Tenerife",center:[center.lat,center.lng],bbox:b,roads:roads.features,addresses:addresses.features,date:new Date().toISOString(),partial:roads.truncated||addresses.truncated};
+  await dbPut(z);app.zones=await dbAll();
+  $("progress").textContent="✓ Guardados "+roads.features.length+" tramos de carretera y "+addresses.features.length+" portales"+(z.partial?". Zona parcial: el servidor limita los resultados. Descarga sectores más pequeños.":".");
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+  app.offlineView=true;updateView();listZones();status(z.name+": "+addresses.features.length+" portales offline.");
+ }catch(e){$("progress").textContent="No se pudo completar la descarga: "+e.message+". No se guardó una zona incompleta."}
+ finally{app.busy=false;$("download").disabled=false}
+}
+$("download").onclick=downloadZone;
+function listZones(){let root=$("zone-list");root.replaceChildren();
+ if(!app.zones.length){root.textContent="Ninguna zona descargada todavía.";return}
+ for(let z of app.zones){let el=document.createElement("div");el.className="entry";
+  let strong=document.createElement("strong");strong.textContent=z.name+" · "+(z.addresses||[]).length+" portales · "+(z.roads||[]).length+" carreteras";el.appendChild(strong);
+  let t=document.createElement("small");t.textContent=new Date(z.date).toLocaleDateString("es-ES")+(z.partial?" · descarga parcial":"");el.appendChild(t);
+  let b1=document.createElement("button");b1.textContent="Ver zona";b1.onclick=()=>{app.offlineView=true;map.setView(z.center,16);updateView();closePanels()};
+  let b2=document.createElement("button");b2.textContent="Eliminar";b2.onclick=async()=>{await dbDelete(z.id);app.zones=await dbAll();listZones();updateView()};
+  el.append(b1,b2);root.appendChild(el)}
+}
+async function refreshOnline(){
+ if(!navigator.onLine||app.offlineView)return;
+ if(map.getZoom()<16){status("Acerca el mapa para ver números de portal.");return}
+ let seq=++app.seq,b=map.getBounds(),bbox=[b.getWest(),b.getSouth(),b.getEast(),b.getNorth()].map(x=>+x.toFixed(6));
+ if(!isTenerife(bbox)){status("Busca una calle de Tenerife.");return}
+ try{
+  let j=await collection("address",bbox,3,()=>{});if(seq!==app.seq)return;
+  app.liveAddresses=j.features;showNumbers();
+  if(!app.searchFocus)status(map.getZoom()<18?"Acerca el mapa 2 niveles para ver números de portal; así las calles permanecen legibles.":j.features.length+" portales disponibles · toca uno para navegar.");
+ }catch(e){if(seq!==app.seq)return;showNumbers();status("No se pudo consultar IGN: aparecen los portales que tengas descargados.",true)}
+}
+function refreshSoon(){clearTimeout(app.refreshTimer);app.refreshTimer=setTimeout(refreshOnline,650)}
+map.on("moveend zoomend",()=>{if(app.offlineView)showRoads();showNumbers();refreshSoon()});
+function stopsLoad(){try{let x=JSON.parse(localStorage.getItem("tfe-portales-stops")||"[]");return Array.isArray(x)?x:[]}catch(e){return []}}
+function stopsSave(v){localStorage.setItem("tfe-portales-stops",JSON.stringify(v.slice(0,100)))}
+$("save-stop").onclick=()=>{let t=app.target;if(!t)return;let s=stopsLoad();s.unshift({...t,name:$("stop-label").value||t.name,id:Date.now(),done:false});stopsSave(s);closePanels();status("Parada guardada en este iPhone.")};
+function listStops(){let root=$("stop-list");root.replaceChildren();let all=stopsLoad();
+ if(!all.length){root.textContent="Aún no hay paradas guardadas.";return}
+ for(let p of all){let row=document.createElement("div");row.className="entry";let head=document.createElement("strong");head.textContent=(p.done?"✓ ":"")+p.name;row.appendChild(head);
+  let bt=(txt,fn)=>{let b=document.createElement("button");b.textContent=txt;b.onclick=fn;row.appendChild(b)};
+  bt("Ver / Ir",()=>{closePanels();map.setView([p.lat,p.lon],19);showTarget(p.lat,p.lon,p.name)});
+  bt(p.done?"Pendiente":"Entregada",()=>{p.done=!p.done;stopsSave(all);listStops()});
+  bt("Borrar",()=>{stopsSave(all.filter(x=>x.id!==p.id));listStops()});root.appendChild(row)}
+}
+$("gps").onclick=()=>{
+ if(app.gpsWatch!==null){
+  if(!app.followGPS){
+   // Retomar seguimiento sin apagar la búsqueda de ubicación del iPhone.
+   app.followGPS=true;app.searchFocus=false;
+   if(app.gps)map.setView([app.gps.lat,app.gps.lon],Math.max(17,map.getZoom()));
+   $("gps").innerHTML="■<br>Parar GPS";
+   status("Siguiendo tu ubicación. Al buscar una calle, dejaré el destino fijo en pantalla.");
+   return;
+  }
+  navigator.geolocation.clearWatch(app.gpsWatch);
+  app.gpsWatch=null;app.followGPS=false;app.searchFocus=false;
+  if(app.gpsMarker)map.removeLayer(app.gpsMarker);app.gpsMarker=null;
+  $("gps").innerHTML="⌖<br>Mi GPS";status("GPS detenido.");return;
+ }
+ if(!("geolocation" in navigator)){status("Este navegador no tiene GPS.",true);return}
+ app.followGPS=true;app.searchFocus=false;
+ status("Solicitando ubicación GPS…");
+ app.gpsWatch=navigator.geolocation.watchPosition(p=>{
+  app.gps={lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy};
+  if(!app.gpsMarker){
+   app.gpsMarker=L.marker([app.gps.lat,app.gps.lon],{
+    icon:L.divIcon({className:"number-icon",html:'<div class="mygps"></div>',iconSize:[20,20]})
+   }).addTo(map);
+  }
+  app.gpsMarker.setLatLng([app.gps.lat,app.gps.lon]);
+  // SOLO recenter si el usuario ha elegido seguir al GPS.
+  if(app.followGPS){
+   map.panTo([app.gps.lat,app.gps.lon],{animate:false});
+   $("gps").innerHTML="■<br>Parar GPS";
+   if(!app.searchFocus)status("GPS ±"+Math.round(app.gps.accuracy)+" m · busca una dirección para verla sin perder el destino.");
+  }else{
+   $("gps").innerHTML="⌖<br>Ver mi GPS";
+  }
+ },e=>{
+  status("No se puede obtener GPS: "+e.message,true);
+  if(app.gpsWatch!==null)navigator.geolocation.clearWatch(app.gpsWatch);
+  app.gpsWatch=null;app.followGPS=false;
+ },{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+};
+// Búsqueda exacta: calle + número + localidad. Nunca ofrecer otros números como coincidencia.
+function parseQuery(raw){
+ const input=raw.trim().replace(/\s+/g," ");
+ let street=input,num=null,locality="";
+ // "Calle Isla de Lanzarote 44 San Isidro", con o sin comas / "nº 44"
+ const match=input.match(/^(.*?)\s*,?\s+(?:n[uú]mero\.?\s*|n[º°]\s*|num\.?\s*)?(\d{1,4}[a-zA-Z]?)(?:\s*[,\s]\s*(.*))?$/i);
+ if(match&&match[1].length>3){
+  street=match[1].trim().replace(/,$/,"").trim();num=match[2].toUpperCase();locality=(match[3]||"").trim();
+ }else{
+  // Permitir buscar solamente la calle con localidad sin número.
+  const local=input.match(/^(.*?)\s*[,\s]+\s*(San Isidro|San Miguel(?: de Abona)?|San Mi|Granadilla(?: de Abona)?|El M[eé]dano|Las Chafiras|Tenerife)\s*$/i);
+  if(local){street=local[1].trim();locality=local[2]}
+ }
+ // CartoCiudad identifica "San Isidro" bajo el municipio Granadilla de Abona.
+ let normLoc=normalized(locality),municipality="",population="";
+ if(/SAN ISIDR/.test(normLoc)){population="SAN ISIDRO";municipality="GRANADILLA ABONA"}
+ else if(/GRANADILLA/.test(normLoc)){municipality="GRANADILLA ABONA"}
+ else if(/SAN MIGUEL|SAN MI$/.test(normLoc)){municipality="SAN MIGUEL ABONA"}
+ else if(/LAS CHAFIRAS/.test(normLoc)){population="LAS CHAFIRAS";municipality="SAN MIGUEL ABONA"}
+ else if(/MEDANO/.test(normLoc)){population="EL MEDANO";municipality="GRANADILLA ABONA"}
+ return {raw:input,street:street.replace(/,\s*$/,""),num,locality,population,municipality};
+}
+function nearMatch(f,q){
+ let p=f.properties||{},a=normalized(p.component_ThoroughfareName),b=normalized(q.street);
+ return Boolean(a&&b&&(a===b||a.includes(b)||b.includes(a)));
+}
+function matchList(ary,q){
+ return ary.filter(f=>{
+  if(!f.geometry||f.geometry.type!=="Point"||!nearMatch(f,q))return false;
+  let p=f.properties||{};
+  if(q.num&&normalized(pnum(p))!==normalized(q.num))return false;
+  if(q.municipality&&p.component_AdminUnitName_4&&normalized(p.component_AdminUnitName_4)!==q.municipality)return false;
+  return true;
+ });
+}
+// Un portal puede existir en Correos/otras guías y faltar en el IGN.
+// Si la calle sí existe, mostrar referencias cercanas, SIN identificarlas como el destino.
+function nearbyOnSameStreet(q){
+ const all=unique(storedAddresses().concat(app.liveAddresses));
+ return all.filter(f=>f.geometry&&f.geometry.type==="Point"&&nearMatch(f,q)&&
+   (!q.municipality || normalized(f.properties?.component_AdminUnitName_4||"")===q.municipality))
+   .sort((a,b)=>{
+      const x=Number((a.properties||{}).locator_designator_addressNumber);
+      const y=Number((b.properties||{}).locator_designator_addressNumber);
+      const n=Number(q.num);
+      const ax=Number.isFinite(x)?Math.abs(x-n):100000;
+      const by=Number.isFinite(y)?Math.abs(y-n):100000;
+      return ax-by;
+   });
+}
+function showUnverifiedStreet(q){
+ app.followGPS=false;app.searchFocus=true;
+ const nearby=nearbyOnSameStreet(q);
+ // Aunque falte el portal exacto, visitar visualmente la CALLE pedida,
+ // sin sustituir el nº solicitado por la coordenada de otra vivienda.
+ if(nearby.length){
+  const center=pointOf(nearby[0]);
+  map.setView(center,18,{animate:false});
+ }
+ let el=$("results");el.replaceChildren();el.style.display="block";
+ let header=document.createElement("button");
+ header.disabled=true;
+ header.textContent="⚠ El nº "+q.num+" NO está confirmado en CartoCiudad. No navegaré a otro portal como si fuera el tuyo.";
+ el.appendChild(header);
+ if(nearby.length){
+  let h=document.createElement("button");h.disabled=true;
+  h.textContent="La calle sí existe en "+(nearby[0].properties?.component_AdminUnitName_4||"Tenerife")+". Selecciona un número cercano solo como referencia para localizar el tramo.";el.appendChild(h);
+  for(let f of nearby.slice(0,8)){
+    const xy=pointOf(f),b=document.createElement("button");
+    b.textContent="Ver tramo próximo: "+labelOf(f)+" (no es el nº "+q.num+")";
+    b.onclick=()=>{map.setView(xy,19);closePanels();status("Zona aproximada de "+q.street+". El nº "+q.num+" NO está localizado: toca el edificio correcto en el mapa antes de navegar.",true)};
+    el.appendChild(b);
+  }
+  let choose=document.createElement("button");choose.textContent="📍 Elegir el nº "+q.num+" manualmente en el mapa";
+  choose.onclick=()=>{map.setView(pointOf(nearby[0]),19);closePanels();status("Busca visualmente el edificio nº "+q.num+" y tócalo. Comprueba la dirección antes de navegar.",true)};
+  el.appendChild(choose);
+ }else{
+  let h=document.createElement("button");h.disabled=true;
+  h.textContent="No hay portales de esa calle en las zonas consultadas. Amplía o desplázate por el mapa y selecciona el punto exacto.";el.appendChild(h);
+ }
+ let ext=document.createElement("button");ext.textContent="Buscar esta dirección en Google Maps (verificar allí)";
+ ext.onclick=()=>window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q.raw+", Tenerife"),"_blank");
+ el.appendChild(ext);
+ let close=document.createElement("button");close.textContent="Cerrar";close.onclick=()=>el.style.display="none";el.appendChild(close);
+}
+function resultsShow(items,q){
+ let el=$("results");el.replaceChildren();el.style.display="block";
+ if(!items.length){
+  let p=document.createElement("button");
+  p.textContent=q.num?"No hay una coincidencia verificada del nº "+q.num+". No se mostrarán otros números como si fueran el destino.":"No hay resultados de esa calle.";
+  el.appendChild(p);return
+ }
+ items.slice(0,35).forEach(f=>{
+  let b=document.createElement("button");
+  let p=f.properties||{};
+  b.textContent=labelOf(f)+" ("+(p.component_AdminUnitName_4||"Tenerife")+")";
+  b.onclick=()=>{let xy=pointOf(f);map.setView(xy,19);showTarget(xy[0],xy[1],labelOf(f))};
+  el.appendChild(b);
+ });
+ let close=document.createElement("button");close.textContent="Cerrar";close.onclick=()=>{el.style.display="none"};el.appendChild(close);
+}
+function candidateMatches(candidate,q){
+ if(candidate.type!=="portal"||!Number.isFinite(Number(candidate.lat))||!Number.isFinite(Number(candidate.lng)))return false;
+ if(Number(candidate.lat)<27.8||Number(candidate.lat)>28.7||Number(candidate.lng)<-17.3||Number(candidate.lng)>-16.0)return false;
+ if(normalized(candidate.portalNumber)!==normalized(q.num))return false;
+ const addrStreet=String(candidate.address||"").split(",")[0].replace(/\s+\d+[A-Za-z]?\s*$/,"");
+ const a=normalized(addrStreet),b=normalized(q.street);
+ if(!(a===b||a.includes(b)||b.includes(a)))return false;
+ if(q.population&&normalized(candidate.poblacion)!==q.population)return false;
+ if(q.municipality&&normalized(candidate.muni)!==q.municipality)return false;
+ return true;
+}
+function showCandidateResults(matches,q){
+ let el=$("results");el.replaceChildren();el.style.display="block";
+ matches.slice(0,30).forEach(c=>{
+  let b=document.createElement("button");
+  b.textContent=(c.address||q.street+" "+q.num)+" · "+(c.postalCode||"Tenerife");
+  b.onclick=()=>selectCandidate(c);
+  el.appendChild(b)
+ });
+ let close=document.createElement("button");close.textContent="Cerrar";close.onclick=()=>el.style.display="none";el.appendChild(close)
+}
+function selectCandidate(c){
+ map.setView([Number(c.lat),Number(c.lng)],20);
+ showTarget(Number(c.lat),Number(c.lng),c.address);
+ status("✓ Portal exacto "+c.portalNumber+" en "+(c.poblacion||c.muni)+". Pulsa Google Maps o Apple Maps para navegar.");
+}
+async function searchOfficial(q){
+ // CartoCiudad tiene portales con coordenadas; NO basarse en el primer resultado de Nominatim.
+ // La localidad se usa para filtrar; incluir "San Isidro" en q de CartoCiudad
+ // puede devolver falsos positivos de "Isla Mayor".
+ const qs=[q.street+" "+q.num];
+ if(q.municipality==="GRANADILLA ABONA")qs.push(q.street+" "+q.num+" Granadilla de Abona");
+ else if(q.municipality==="SAN MIGUEL ABONA")qs.push(q.street+" "+q.num+" San Miguel de Abona");
+ let found=[];
+ for(const query of qs){
+  const u="https://www.cartociudad.es/geocoder/api/geocoder/candidates?q="+encodeURIComponent(query)+"&limit=35";
+  const r=await fetch(u,{headers:{Accept:"application/json"}});
+  if(!r.ok)throw Error("CartoCiudad: "+r.status);
+  const data=await r.json();
+  if(!Array.isArray(data))throw Error("Respuesta no válida de CartoCiudad");
+  found=data.filter(c=>candidateMatches(c,q));
+  if(found.length)break;
+ }
+ return found;
+}
+// Via sin número: CartoCiudad candidates + find proporciona el trazado y
+// coordenadas de referencia; Nominatim se usa únicamente como último recurso.
+async function searchOfficialStreet(q){
+ const terms=[q.street, q.street.replace(/^(calle|camino|avenida|avda|carretera)\s+/i,"")];
+ const used=new Set();let options=[];
+ for(const term of terms){
+  if(used.has(term))continue;used.add(term);
+  const req=await fetch("https://www.cartociudad.es/geocoder/api/geocoder/candidates?q="+encodeURIComponent(term)+"&limit=40",{headers:{Accept:"application/json"}});
+  if(!req.ok)continue;
+  const data=await req.json();
+  if(!Array.isArray(data))continue;
+  options.push(...data.filter(c=>{
+   if(!["callejero","carreteras"].includes(c.type))return false;
+   if(q.municipality&&normalized(c.muni)!==q.municipality)return false;
+   const street=String(c.address||"").split(",")[0];
+   const a=normalized(street),b=normalized(q.street);
+   return a&&b&&(a===b||a.includes(b)||b.includes(a));
+  }));
+  if(options.length)break;
+ }
+ options=options.filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i)
+   .sort((a,b)=>a.muni==="San Miguel de Abona"?-1:b.muni==="San Miguel de Abona"?1:0);
+ const located=[];
+ for(const candidate of options.slice(0,7)){
+  let res=await fetch("https://www.cartociudad.es/geocoder/api/geocoder/find?q="+encodeURIComponent(candidate.address),{headers:{Accept:"application/json"}});
+  if(!res.ok)continue;
+  const row=await res.json();
+  if(row&&Number.isFinite(Number(row.lat))&&Number.isFinite(Number(row.lng))&&Number(row.lat)>27&&Number(row.lng)<-16){
+   located.push({...candidate,lat:Number(row.lat),lng:Number(row.lng),geom:row.geom||""});
+  }
+ }
+ return located;
+}
+function selectOfficialStreet(c){
+ app.followGPS=false;app.searchFocus=true;
+ map.setView([c.lat,c.lng],18,{animate:false});
+ routeLayer.clearLayers();
+ const m=String(c.geom||"").match(/^LINESTRING\s*\((.*)\)$/i);
+ if(m){
+  const line=m[1].split(",").map(pair=>pair.trim().split(/\s+/).map(Number))
+    .filter(x=>x.length>=2&&x.every(Number.isFinite)).map(x=>[x[1],x[0]]);
+  if(line.length>1)L.polyline(line,{color:"#ff8c00",weight:8,opacity:.85}).addTo(routeLayer);
+ }
+ showTarget(c.lat,c.lng,(c.address||"Calle")+" · punto de referencia SIN número");
+ status("✓ Calle localizada en "+c.muni+". Es un punto de referencia; introduce el portal para ir al edificio exacto.");
+}
+function showOfficialStreetResults(rows){
+ const el=$("results");el.replaceChildren();el.style.display="block";
+ rows.forEach(c=>{
+  const button=document.createElement("button");
+  button.textContent="📍 "+c.address+" · ver calle / navegar a referencia";
+  button.onclick=()=>selectOfficialStreet(c);
+  el.appendChild(button);
+ });
+}
+
+async function fallbackOfficialArea(q){
+ // Respaldo si el Geocoder es inaccesible: consultar puntos oficiales IGN de zonas conocidas.
+ const center=q.population==="SAN ISIDRO"?[28.07437,-16.55288]:
+  q.municipality==="SAN MIGUEL ABONA"?[28.0985,-16.6150]:
+  q.municipality==="GRANADILLA ABONA"?[28.121,-16.578]:
+  [map.getCenter().lat,map.getCenter().lng];
+ const b=bboxFor(center[0],center[1],1.6);
+ if(!isTenerife(b))return [];
+ const data=await collection("address",b,8,()=>{});
+ app.liveAddresses=unique(app.liveAddresses.concat(data.features));showNumbers();
+ return matchList(data.features,q);
+}
+$("search-form").onsubmit=async e=>{
+ e.preventDefault();document.activeElement.blur();
+ let raw=$("q").value.trim();if(!raw)return;
+ // Al buscar un destino, el GPS sigue obteniendo coordenadas, pero deja
+ // de mover el mapa hasta que el usuario pulse explícitamente «Mi GPS».
+ app.followGPS=false;app.searchFocus=true;
+ if(app.gpsWatch!==null)$("gps").innerHTML="⌖<br>Ver mi GPS";
+ closePanels();const q=parseQuery(raw);
+ if(!q.street){status("Escribe una calle y, si lo tienes, el número.",true);return}
+ const cached=matchList(storedAddresses(),q);
+ if(!navigator.onLine){
+  if(cached.length===1){let xy=pointOf(cached[0]);map.setView(xy,19);showTarget(xy[0],xy[1],labelOf(cached[0]));status("Portal encontrado entre las direcciones descargadas.")}
+  else if(cached.length){resultsShow(cached,q);status("Selecciona entre los portales exactos descargados.");}
+  else if(q.num&&nearbyOnSameStreet(q).length){showUnverifiedStreet(q);status("Sin conexión: el nº "+q.num+" no figura en tu descarga; sí hay referencias de la misma calle.",true)}
+  else{resultsShow([],q);status("Sin conexión: ese portal no está en las zonas guardadas.",true)}
+  return;
+ }
+ status("Comprobando calle, número y localidad oficiales…");
+ if(q.num){
+  let official=[],serverFailure=false;
+  try{official=await searchOfficial(q)}catch(err){serverFailure=true}
+  if(official.length){
+   if(official.length===1)selectCandidate(official[0]);
+   else{showCandidateResults(official,q);status("Hay "+official.length+" coincidencias exactas del portal "+q.num+". Elige la localidad.");}
+   return;
+  }
+  if(cached.length){
+   resultsShow(cached,q);status("Coincidencia en la zona descargada. Verifica el municipio antes de navegar.");
+   return;
+  }
+  try{
+   let fallback=await fallbackOfficialArea(q);
+   if(fallback.length===1){let xy=pointOf(fallback[0]);map.setView(xy,19);showTarget(xy[0],xy[1],labelOf(fallback[0]));status("Portal "+q.num+" encontrado en las direcciones oficiales del IGN.")}
+   else if(fallback.length){resultsShow(fallback,q);status("Se han encontrado portales "+q.num+" de esa calle. Elige la dirección.");}
+   else{showUnverifiedStreet(q);status("No se confirma el nº "+q.num+". He localizado referencias de la misma calle para que marques manualmente el portal.",true)}
+  }catch(err){showUnverifiedStreet(q);status("La comprobación oficial falló. Puedes ver el tramo de calle o tocar el portal manualmente.",true)}
+  return;
+ }
+ // Calle sin número: resolver primero contra la fuente oficial; nunca quedarse
+ // en el GPS actual después de pulsar Buscar.
+ if(!navigator.onLine){
+  if(cached.length){
+   const center=pointOf(cached[0]);
+   map.setView(center,18,{animate:false});
+   showTarget(center[0],center[1],q.street+" · referencia de calle (sin número)");
+   status("Calle encontrada en las zonas descargadas; punto aproximado, no portal exacto.");
+  }else{
+   resultsShow([],q);
+   status("Esta calle no figura en las zonas descargadas. Consulta online antes de entrar en zona rural.",true);
+  }
+  return;
+ }
+ try{
+  let located=await searchOfficialStreet(q);
+  if(located.length===1){selectOfficialStreet(located[0]);return}
+  if(located.length>1){showOfficialStreetResults(located);status("Elige la calle en el municipio correcto.");return}
+ }catch(err){/* segunda fuente como respaldo */}
+ if(cached.length){
+  const center=pointOf(cached[0]);
+  map.setView(center,18,{animate:false});
+  showTarget(center[0],center[1],q.street+" · punto de referencia (sin número)");
+  status("Referencia encontrada en los datos descargados. Para un portal exacto, añade número.");
+  return;
+ }
+ try{
+  const query=q.street+", "+(q.locality||"San Miguel de Abona, Tenerife");
+  const url="https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=es&viewbox=-16.95,28.65,-16.08,27.90&bounded=1&accept-language=es&q="+encodeURIComponent(query);
+  const r=await fetch(url);if(!r.ok)throw Error("Sin servicio de calles");
+  const hits=await r.json();
+  if(!hits.length){status("No figura en las fuentes consultadas. Comprueba el nombre de la vía.",true);resultsShow([],q);return}
+  const result=$("results");result.replaceChildren();result.style.display="block";
+  hits.forEach(h=>{const b=document.createElement("button");b.textContent=h.display_name;
+    b.onclick=()=>{map.setView([+h.lat,+h.lon],18);showTarget(+h.lat,+h.lon,h.display_name+" · referencia sin número")};result.appendChild(b)});
+  status("Selecciona una calle. Introduce número para localizar el portal exacto.");
+ }catch(err){status("No se pudo consultar el buscador de calles.",true)}
+
+};
+function distance(a,b){let R=6371000,dl=(b[1]-a[1])*Math.PI/180,dp=(b[0]-a[0])*Math.PI/180,q=Math.sin(dp/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(q)))}
+function graphFor(roads){
+ const nodes=new Map(),edges=new Map();
+ const key=c=>c[1].toFixed(6)+","+c[0].toFixed(6);
+ const connect=(a,b)=>{
+  let ka=key(a),kb=key(b);if(ka===kb)return;
+  let v=distance([a[1],a[0]],[b[1],b[0]]);
+  nodes.set(ka,[a[1],a[0]]);nodes.set(kb,[b[1],b[0]]);
+  if(!edges.has(ka))edges.set(ka,[]);if(!edges.has(kb))edges.set(kb,[]);
+  edges.get(ka).push([kb,v]);edges.get(kb).push([ka,v]);
+ };
+ for(let f of roads){let g=f.geometry;if(!g)continue;let parts=g.type==="LineString"?[g.coordinates]:g.type==="MultiLineString"?g.coordinates:[];
+  for(let ar of parts)for(let i=1;i<ar.length;i++)connect(ar[i-1],ar[i])}
+ return {nodes,edges};
+}
+function closestNode(g,p){let best=null,dist=Infinity;for(let[k,c]of g.nodes){let d=distance(c,p);if(d<dist){dist=d;best=k}}return {key:best,dist}}
+function routeFind(g,start,end){
+ let a=closestNode(g,start),b=closestNode(g,end);if(!a.key||!b.key||a.dist>200||b.dist>200)return null;
+ let heap=[],score=new Map([[a.key,0]]),prev=new Map();
+ function push(x){heap.push(x);let i=heap.length-1;while(i>0){let j=(i-1)>>1;if(heap[j][0]<=heap[i][0])break;[heap[i],heap[j]]=[heap[j],heap[i]];i=j}}
+ function pop(){let x=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let i=0;for(;;){let j=i*2+1,k=j+1;if(j>=heap.length)break;if(k<heap.length&&heap[k][0]<heap[j][0])j=k;if(heap[i][0]<=heap[j][0])break;[heap[i],heap[j]]=[heap[j],heap[i]];i=j}}return x}
+ push([0,a.key]);let iterations=0;
+ while(heap.length&&iterations++<150000){let [s,k]=pop();if(s>(score.get(k)||Infinity))continue;if(k===b.key)break;
+  for(let[n,w]of g.edges.get(k)||[]){let cand=s+w;if(cand<(score.get(n)??Infinity)){score.set(n,cand);prev.set(n,k);push([cand,n])}}}
+ if(!score.has(b.key))return null;
+ let path=[],cur=b.key;while(cur){path.unshift(g.nodes.get(cur));if(cur===a.key)break;cur=prev.get(cur)}
+ if(path.length<2||cur!==a.key)return null;
+ return {points:[start,...path,end],meters:score.get(b.key)+a.dist+b.dist};
+}
+$("offline-route").onclick=()=>{
+ if(!app.gps){status("Pulsa primero «Mi GPS» y permite la ubicación para calcular una ruta local.",true);return}
+ if(!app.target)return;
+ let graph=graphFor(storedRoads());if(graph.nodes.size===0){status("Primero descarga la zona desde «Sin conexión».",true);return}
+ let res=routeFind(graph,[app.gps.lat,app.gps.lon],[app.target.lat,app.target.lon]);
+ if(!res){status("No hay una ruta conectada dentro de las zonas descargadas. Prueba descargar zonas contiguas o usar CoMaps.",true);return}
+ routeLayer.clearLayers();let line=L.polyline(res.points,{color:"#106bba",weight:6,opacity:.95,dashArray:"10,6"}).addTo(routeLayer);map.fitBounds(line.getBounds(),{padding:[55,60]});
+ status("Ruta offline orientativa: "+(res.meters/1000).toFixed(2)+" km. Revisa sentido de calles; NO sustituye a navegación vial.");
+ closePanels();
+};
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>status("No se activó el modo offline de la app.",true)))}
+/* Directed-road open delivery tour. No numeric house sorting. */
+(function(root){
+  "use strict";
+  function optimize(m){
+    const n=m.length;
+    if(n<2||m.some(r=>r.length!==n))throw Error("Matriz de carretera incompleta");
+    const valid=(a,b)=>Number.isFinite(m[a][b])&&m[a][b]>=0;
+    const cost=(a,b)=>valid(a,b)?m[a][b]+0.35*Math.max(0,(m[0][a]||0)-(m[0][b]||0)):Infinity;
+    const score=order=>order.reduce((v,b,i)=>v+cost(i?order[i-1]:0,b),0);
+    const remaining=Array.from({length:n-1},(_,i)=>i+1), order=[];
+    let a=0;
+    while(remaining.length){
+      let j=-1,best=Infinity;
+      for(let i=0;i<remaining.length;i++){
+        const c=cost(a,remaining[i]);if(c<best){j=i;best=c}
+      }
+      if(j<0)throw Error("Hay paradas sin acceso por carretera");
+      a=remaining.splice(j,1)[0];order.push(a);
+    }
+    // Preserve the first (closest accessible) stop. Improve directed open path.
+    for(let pass=0;pass<5;pass++){
+      let improved=false, best=score(order);
+      for(let i=1;i<order.length;i++)for(let j=1;j<order.length;j++){
+        if(i===j)continue;const alt=order.slice();alt.splice(j,0,alt.splice(i,1)[0]);
+        const c=score(alt);if(c+0.001<best){order.splice(0,order.length,...alt);best=c;improved=true}
+      }
+      if(!improved)break;
+    }
+    return order;
+  }
+  function extract(text){
+    // Retain every nonempty OCR line for human review, never silently omit rows.
+    return String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean).join("\n");
+  }
+  root.DailyRouteCore={optimize,extract};
+})(typeof globalThis==="object"?globalThis:this);
+
+// Daily planner inside original application closure.
+const dailyKey="tfe-daily-route-v1";
+let daily;try{daily=JSON.parse(localStorage.getItem(dailyKey)||'{}')}catch(e){daily={}}
+if(!Array.isArray(daily.stops))daily.stops=[];
+const dailyLayer=L.layerGroup().addTo(map);
+const dailySave=()=>localStorage.setItem(dailyKey,JSON.stringify(daily));
+const dp=document.createElement("section");dp.id="daily-panel";
+dp.style.cssText="display:none;position:absolute;z-index:1250;inset:calc(120px + env(safe-area-inset-top)) 7px calc(76px + env(safe-area-inset-bottom));background:white;border-radius:14px;padding:13px;overflow:auto;box-shadow:0 4px 24px #0005";
+dp.innerHTML='<button class="close" id="daily-close">×</button><h2>📋 Ruta diaria de reparto</h2><p class="note">Fotografía el listado. Revisa las direcciones reconocidas. Una por línea (calle y portal); puedes elegir una zona común. Elimina nombres y códigos.</p><div class="row"><button id="daily-camera">📷 Foto</button><button id="daily-gallery">Fotos</button></div><input id="daily-photo" type="file" accept="image/*" capture="environment" hidden><input id="daily-pictures" type="file" accept="image/*" hidden><label for="daily-locality" style="font-size:13px;font-weight:700">Zona del listado (si no figura en las filas)</label><select id="daily-locality" style="width:100%;margin:5px 0 8px;padding:8px;font:inherit"><option value="">Indicar localidad en cada dirección</option><option>San Miguel de Abona</option><option>Las Zocas</option><option>Aldea Blanca</option><option>El Roque</option><option>Tamaide</option><option>El Frontón</option><option>Las Chafiras</option><option>Llano del Camello</option><option>Guargacho</option><option>Oroteanda</option><option>Golf del Sur</option><option>Vilaflor</option><option>San Isidro</option></select><textarea id="daily-text" rows="6" style="width:100%;font:inherit;padding:8px" placeholder="Calle Alfonso Mejías 62, San Miguel de Abona"></textarea><p class="note" id="daily-msg" role="status"></p><div class="row"><button id="daily-office">Desde Correos</button><button id="daily-gps">Desde mi GPS</button></div><p class="note" id="daily-origin"></p><label style="display:block;font-size:13px;margin:9px 0"><input type="checkbox" id="daily-consent"> Consultar CartoCiudad y enviar coordenadas al servicio OSRM de demostración. Nunca fotos ni nombres.</label><button id="daily-run" class="yellow" style="width:100%">Localizar y ordenar</button><div class="row"><button id="daily-reorder">Reordenar pendientes</button><button id="daily-next">Siguiente GPS</button></div><div class="row"><button id="daily-map">Ver mapa de paradas</button><button id="daily-clear">Borrar ruta</button></div><div id="daily-list"></div>';
+document.body.appendChild(dp);
+const dbtn=document.createElement("button");dbtn.innerHTML="📋<br>Ruta diaria";dbtn.style.background='#ffce26';dbtn.style.color='#102b46';document.querySelector('#menu').appendChild(dbtn);
+const dm=t=>$("daily-msg").textContent=t;
+let dailyOrigin=daily.origin||null;
+const showOrigin=()=>$("daily-origin").textContent=dailyOrigin?"Salida: "+dailyOrigin.name+" · "+dailyOrigin.lat.toFixed(5)+", "+dailyOrigin.lon.toFixed(5):"Salida: Correos, Alfonso Mejías 4 (por verificar).";
+dbtn.onclick=()=>{closePanels();dp.style.display="block";showOrigin();renderDaily()};
+$("daily-close").onclick=()=>dp.style.display="none";
+$("daily-camera").onclick=()=>$("daily-photo").click();
+$("daily-gallery").onclick=()=>$("daily-pictures").click();
+$("daily-office").onclick=()=>{dailyOrigin=null;showOrigin()};
+function currentPosition(){return new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,name:"GPS actual"}),()=>no(Error("GPS no disponible")),{enableHighAccuracy:true,timeout:12000,maximumAge:0}))}
+$("daily-gps").onclick=async()=>{try{dailyOrigin=await currentPosition();showOrigin()}catch(e){dm(e.message)}};
+async function readDailyPhoto(file){
+ if(!file)return;try{
+ dm("Leyendo foto localmente…");const worker=await getPhotoWorker(),bitmap=await createImageBitmap(file),canvas=document.createElement("canvas");
+ const scale=Math.min(1,3000/Math.max(bitmap.width,bitmap.height));canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);
+ const ctx=canvas.getContext("2d");ctx.filter="grayscale(100%) contrast(135%)";ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+ const {data}=await worker.recognize(canvas);
+ $("daily-text").value=[$("daily-text").value,DailyRouteCore.extract(data.text)].filter(Boolean).join("\n");
+ dm("Revisa todas las filas; la escritura manual puede dar errores.");
+ }catch(e){dm("OCR no disponible: "+e.message+". Puedes escribir las direcciones.")}
+}
+for(const id of ["daily-photo","daily-pictures"])$(id).onchange=e=>{readDailyPhoto(e.target.files[0]);e.target.value=""};
+const areas={"VILAFLOR":["VILAFLOR CHASNA",""],"SAN MIGUEL":["SAN MIGUEL ABONA",""],"SAN MIGUEL ABONA":["SAN MIGUEL ABONA",""],"LAS ZOCAS":["SAN MIGUEL ABONA","LAS ZOCAS"],"ALDEA BLANCA":["SAN MIGUEL ABONA","ALDEA BLANCA"],"EL ROQUE":["SAN MIGUEL ABONA","EL ROQUE"],"TAMAIDE":["SAN MIGUEL ABONA","TAMAIDE"],"EL FRONTON":["SAN MIGUEL ABONA","EL FRONTON"],"GUARGACHO":["SAN MIGUEL ABONA","GUARGACHO"],"OROTEANDA":["SAN MIGUEL ABONA","OROTEANDA"],"GOLF SUR":["SAN MIGUEL ABONA","GOLF SUR"],"LAS CHAFIRAS":["SAN MIGUEL ABONA","CHAFIRAS"],"LLANO CAMELLO":["SAN MIGUEL ABONA","LLANO CAMELLO"],"SAN ISIDRO":["GRANADILLA ABONA","SAN ISIDRO"]};
+async function dailyOfficial(q){
+ const terms=[q.street+" "+q.num+" "+q.locality,q.street+" "+q.num];
+ for(const term of terms){
+ const res=await fetch("https://www.cartociudad.es/geocoder/api/geocoder/candidates?q="+encodeURIComponent(term)+"&limit=35",{signal:AbortSignal.timeout(15000)});
+ if(!res.ok)throw Error("CartoCiudad "+res.status);
+ const rows=await res.json();if(!Array.isArray(rows))throw Error("Respuesta inválida");
+ const found=rows.filter(c=>c.type==="portal"&&!c.noNumber&&(String(c.portalNumber)+(c.extension||"")).toUpperCase()===q.num&&normalized(c.muni)===q.municipality&&(!q.population||normalized(c.poblacion)===q.population)&&Number.isFinite(+c.lat)&&Number.isFinite(+c.lng)&&+c.lat>=27.8&&+c.lat<=28.7&&+c.lng>=-17.3&&+c.lng<=-16);
+ if(found.length)return found;
+ }return [];
+}
+async function resolveDaily(raw){
+ let q=parseQuery(raw.replace(/^(C\/|CL\.)\s*/i,'Calle '));if(q.num&&!q.locality&&$('daily-locality').value)q=parseQuery(q.street+' '+q.num+', '+$('daily-locality').value);const loc=normalized(q.locality),area=Object.entries(areas).find(([k])=>normalized(k)===loc);
+ if(!q.num||!q.street||!area||!/^(calle|c\/|cl\.?|camino|cmno\.?|avenida|avda\.?|carretera|plaza|pasaje|callej[oó]n|traves[ií]a|paseo)\s+/i.test(q.street))return {raw,error:"Revisar: calle, número y localidad requeridos"};
+ [q.municipality,q.population]=area[1];q.population=normalized(q.population);q.street=q.street.replace(/^(c\/|cl\.?)\s+/i,"Calle ");
+ const opts=[];
+ for(const f of matchList(unique(storedAddresses().concat(app.liveAddresses)),q)){
+ const p=f.properties||{};if(normalized(p.component_ThoroughfareName)!==normalized(q.street)||normalized(p.component_AdminUnitName_4)!==q.municipality)continue;
+ if(q.population&&normalized(p.component_AddressAreaName)!==q.population)continue;
+ const [lat,lon]=pointOf(f);opts.push({lat,lon,name:labelOf(f)});
+ }
+ if(navigator.onLine){try{for(const c of await dailyOfficial(q)){
+ const street=String(c.address||"").split(",")[0].replace(/\s+\d+\s*[A-Za-z]?\s*$/,"");
+ if(normalized(street)===normalized(q.street))opts.push({lat:+c.lat,lon:+c.lng,name:c.address});
+ }}catch(e){if(!opts.length)return {raw,error:"CartoCiudad no disponible"}}}
+ const uniq=[];for(const p of opts)if(Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&!uniq.some(v=>distance([v.lat,v.lon],[p.lat,p.lon])<12))uniq.push(p);
+ if(uniq.length!==1)return {raw,error:uniq.length?"Varios portales posibles; revisa localidad":"Portal exacto no encontrado"};
+ return {...uniq[0],raw,num:q.num,done:false};
+}
+async function orderDaily(stops){
+ if(!navigator.onLine)throw Error("Sin conexión: se mantiene la última ruta guardada.");
+ if(stops.length>75)throw Error("Usa sectores de hasta 75 paradas.");
+ const pts=[dailyOrigin,...stops],coords=pts.map(p=>p.lon+","+p.lat).join(";");
+ const approaches=pts.map((p,i)=>i?"curb":"unrestricted").join(";");
+ const r=await fetch("https://router.project-osrm.org/table/v1/driving/"+coords+"?annotations=duration&approaches="+approaches,{signal:AbortSignal.timeout(35000)});
+ const d=await r.json();if(!r.ok||d.code!=="Ok"||!Array.isArray(d.durations))throw Error("Servicio de rutas no disponible");
+ if(d.sources?.some(x=>!x||x.distance>50)||d.destinations?.some(x=>!x||x.distance>50))throw Error("Algún portal queda a más de 50 m de la vía; revisar.");
+ const ordered=DailyRouteCore.optimize(d.durations).map(i=>stops[i-1]);
+ const sequence=[dailyOrigin,...ordered],path=sequence.map(p=>p.lon+","+p.lat).join(";");
+ let geometry=null;
+ try{
+ const rr=await fetch("https://router.project-osrm.org/route/v1/driving/"+path+"?overview=full&geometries=geojson&continue_straight=true&approaches="+approaches,{signal:AbortSignal.timeout(35000)});
+ const rd=await rr.json();
+ if(rr.ok&&rd.code==="Ok"&&rd.routes?.[0]?.geometry?.coordinates)geometry=rd.routes[0].geometry.coordinates.map(([lon,lat])=>[lat,lon]);
+ }catch(e){}
+ return {ordered,geometry};
+}
+function renderDaily(){
+ const root=$("daily-list");root.replaceChildren();dailyLayer.clearLayers();let n=0,done=0;
+ if(daily.geometry?.length>1)L.polyline(daily.geometry,{color:'#1969af',weight:5,opacity:.8}).addTo(dailyLayer);
+ for(const s of daily.stops){
+ const row=document.createElement("div");row.className="entry";const head=document.createElement("strong");
+ head.textContent=s.error?"⚠ "+s.raw:s.done?"✓ "+s.name:(++n)+". "+s.name;row.appendChild(head);
+ if(s.error){const note=document.createElement("p");note.className="note";note.textContent=s.error;row.appendChild(note);
+ const edit=document.createElement("button");edit.textContent="Corregir portal";edit.onclick=async()=>{const v=prompt("Dirección completa",s.raw);if(!v)return;if(!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}try{const fix=await resolveDaily(v.trim());if(!fix.error){const others=daily.stops.filter(x=>x!==s&&!x.error&&!x.done);if(!dailyOrigin)throw Error("Selecciona origen");const result=await orderDaily([...others,fix]);daily={origin:dailyOrigin,geometry:result.geometry,stops:[...daily.stops.filter(x=>x.done),...result.ordered,...daily.stops.filter(x=>x!==s&&x.error)]};}else Object.assign(s,fix);dailySave();renderDaily();showOrigin()}catch(e){dm(e.message)}};row.appendChild(edit)}
+ else{if(s.done)done++;const b=document.createElement("button");b.textContent=s.done?"Pendiente":"Entregada";b.onclick=()=>{s.done=!s.done;dailySave();renderDaily()};row.appendChild(b);
+ for(const [label,url] of [[" GPS Apple",voiceRoute(s)],[" · Google",navLink("google",s)]]){const a=document.createElement("a");a.textContent=label;a.href=url;a.target="_blank";a.rel="noopener";row.appendChild(a)}
+ if(!s.done)L.marker([s.lat,s.lon],{icon:L.divIcon({className:"number-icon",html:'<span class="num">'+n+'</span>',iconSize:[1,1]})}).addTo(dailyLayer).bindPopup(safe(s.name));
+ }root.appendChild(row);
+ }
+ const summary=document.createElement("p");summary.className="note";summary.textContent=done+" entregadas · "+n+" pendientes · "+daily.stops.filter(s=>s.error).length+" sin verificar";root.prepend(summary);
+}
+async function runDaily(reorder=false){
+ if(!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}
+ const btn=$("daily-run"),rb=$("daily-reorder");btn.disabled=rb.disabled=true;
+ try{
+ if(reorder)dailyOrigin=await currentPosition();
+ if(!dailyOrigin){const o=await resolveDaily("Calle Alfonso Mejías 4, San Miguel de Abona");if(o.error)throw Error("No se verificó la oficina. Usa GPS desde la oficina.");dailyOrigin={lat:o.lat,lon:o.lon,name:"Correos · Alfonso Mejías 4"}}
+ let all;
+ if(reorder)all=daily.stops;
+ else{
+ const lines=$("daily-text").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ if(!lines.length)throw Error("Introduce o fotografía el listado.");
+ if(daily.stops.length&&!confirm("¿Sustituir la ruta guardada?"))return;
+ all=[];for(let i=0;i<lines.length;i++){dm("Verificando "+(i+1)+"/"+lines.length);all.push(await resolveDaily(lines[i]))}
+ }
+ const pending=all.filter(x=>!x.error&&!x.done);
+ if(!pending.length){if(!reorder){daily={origin:dailyOrigin,stops:all};dailySave();renderDaily()}throw Error("No hay portales pendientes verificados")}
+ dm("Calculando orden por carretera…");
+ const {ordered,geometry}=await orderDaily(pending);
+ daily={origin:dailyOrigin,geometry,stops:[...all.filter(x=>x.done),...ordered,...all.filter(x=>x.error)]};dailySave();renderDaily();showOrigin();
+ dm(ordered.length+' paradas ordenadas; '+all.filter(x=>x.error).length+' sin verificar. '+(geometry?'Trazado vial disponible. ':'Trazado no disponible. ')+'Respeta la señalización real.');
+ }catch(e){dm(e.message+" · No se ha inventado ninguna ruta.")}finally{btn.disabled=rb.disabled=false}
+}
+$("daily-run").onclick=()=>runDaily();$("daily-reorder").onclick=()=>runDaily(true);
+$("daily-next").onclick=()=>{const s=daily.stops.find(x=>!x.error&&!x.done);if(s)window.open(voiceRoute(s),"_blank","noopener");else dm("No quedan paradas verificadas.")};
+$("daily-map").onclick=()=>{dp.style.display="none";const pts=daily.stops.filter(s=>!s.error&&!s.done).map(s=>[s.lat,s.lon]);if(pts.length)map.fitBounds(pts,{padding:[40,100],maxZoom:19})};
+$("daily-clear").onclick=()=>{if(confirm("¿Borrar la ruta diaria y el texto de la foto?")){daily={stops:[]};dailyOrigin=null;dailySave();$("daily-text").value="";renderDaily();showOrigin();dm("Ruta borrada.")}};
+
+loadZones().then(()=>{if(!navigator.onLine)app.offlineView=true;updateView();refreshSoon()});
+})();
+</script></body></html>
