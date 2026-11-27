@@ -1,6 +1,6 @@
 // Portales GPS Tenerife: app shell disponible sin conexión.
 // NO descargar ni precargar teselas de los servidores tile.openstreetmap.org.
-const CACHE="portales-gps-shell-v6";
+const CACHE="portales-gps-shell-v7";
 const SHELL=["./","./index.html","./manifest.webmanifest"];
 const LIBS=[
  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
