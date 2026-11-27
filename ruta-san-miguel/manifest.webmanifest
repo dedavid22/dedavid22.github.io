@@ -1,0 +1,12 @@
+{
+  "name": "Ruta San Miguel · Reparto",
+  "short_name": "Ruta San Miguel",
+  "id": "/ruta-san-miguel/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#edf2f7",
+  "theme_color": "#132e46",
+  "lang": "es",
+  "description": "Planificador de reparto por sectores en San Miguel de Abona"
+}
