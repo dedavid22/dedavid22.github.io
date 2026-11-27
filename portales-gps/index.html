@@ -995,9 +995,14 @@ let daily;try{daily=JSON.parse(localStorage.getItem(dailyKey)||'{}')}catch(e){da
 if(!Array.isArray(daily.stops))daily.stops=[];
 const dailyLayer=L.layerGroup().addTo(map);const dailyLegLayer=L.layerGroup().addTo(map);map.attributionControl.addAttribution('CartoCiudad / IGN · CC BY 4.0 <a href="https://www.scne.es/productos.html#CartoCiudad" target="_blank" rel="noopener">SCNE</a>');
 const dailySave=()=>localStorage.setItem(dailyKey,JSON.stringify(daily));
+const correctionKey="tfe-confirmed-portals-v1";
+let corrections={};try{corrections=JSON.parse(localStorage.getItem(correctionKey)||"{}")}catch(e){}
+const correctionId=(raw,zone)=>normalized(zone)+"|"+String(raw).normalize("NFC").trim().toLowerCase();
+const countMismatch=()=>!!daily.expected&&daily.expected!==daily.stops.reduce((a,s)=>a+countOf(s),0);
+const pointKey=p=>Number(p.lat).toFixed(6)+","+Number(p.lon).toFixed(6);
 const dp=document.createElement("section");dp.id="daily-panel";
 dp.style.cssText="display:none;position:absolute;z-index:1250;inset:calc(120px + env(safe-area-inset-top)) 7px calc(76px + env(safe-area-inset-bottom));background:white;border-radius:14px;padding:13px;overflow:auto;box-shadow:0 4px 24px #0005";
-dp.innerHTML='<button class="close" id="daily-close">×</button><h2>📋 Ruta diaria de reparto</h2><p class="note">Fotografía el listado. Revisa las direcciones reconocidas. Una por línea (calle y portal); puedes elegir una zona común. Elimina nombres y códigos.</p><div class="row"><button id="daily-camera">📷 Foto</button><button id="daily-gallery">Fotos</button></div><input id="daily-photo" type="file" accept="image/*" capture="environment" hidden><input id="daily-pictures" type="file" accept="image/*" hidden><label for="daily-locality" style="font-size:13px;font-weight:700">Zona del listado (si no figura en las filas)</label><select id="daily-locality" style="width:100%;margin:5px 0 8px;padding:8px;font:inherit"><option value="">Indicar localidad en cada dirección</option><option>San Miguel de Abona</option><option>Las Zocas</option><option>Aldea Blanca</option><option>El Roque</option><option>Tamaide</option><option>El Frontón</option><option>Las Chafiras</option><option>Llano del Camello</option><option>Guargacho</option><option>Oroteanda</option><option>Golf del Sur</option><option>Vilaflor</option><option>San Isidro</option></select><textarea id="daily-text" rows="6" style="width:100%;font:inherit;padding:8px" placeholder="Calle Alfonso Mejías 62, San Miguel de Abona"></textarea><p class="note" id="daily-msg" role="status"></p><div id="daily-vision-info" style="font-size:13px;margin:6px 0"></div><label style="display:block;font-size:13px;margin:8px 0"><input type="checkbox" id="daily-vision-consent"> Autorizar envío de foto a mi lector IA privado (mi ordenador, mediante conexión cifrada). Sin nombres ni códigos.</label><div class="row"><button id="daily-office">Desde Correos</button><button id="daily-gps">Desde mi GPS</button></div><p class="note" id="daily-origin"></p><div class="row"><label for="daily-expected" style="flex:1;font-size:13px;font-weight:700">Envíos de la PDA (opcional)</label><input id="daily-expected" type="number" min="1" max="200" inputmode="numeric" placeholder="35" style="max-width:95px"></div><label style="display:block;font-size:13px;margin:6px 0"><input type="checkbox" id="daily-return"> Terminar la ruta en Correos</label><label for="daily-sector" style="display:block;font-weight:700;margin-top:8px">Distribución por zonas</label><select id="daily-sector" style="width:100%;margin:5px 0;padding:8px;font:inherit"><option value="auto">Automático · completar una zona antes de otra</option><option value="Norte">Norte primero</option><option value="Sur">Sur primero</option><option value="Este">Este primero</option><option value="Oeste">Oeste primero</option><option value="free">Ruta libre · sin sectores</option></select><p class="note">Sectores relativos a Correos, no al GPS actual. Se mantiene la misma localidad en un sector cuando es conocida.</p><div class="row"><label for="daily-depart">Hora de salida</label><input id="daily-depart" type="time" value="14:30"></div><label for="daily-nav">Navegador preferido</label><select id="daily-nav"><option value="apple">Apple Maps</option><option value="google">Google Maps</option><option value="waze">Waze</option></select><p class="note">Cálculo vial: comprueba rodeos y accesos. Los portales dudosos siempre quedan en el checklist.</p><label style="display:block;font-size:13px;margin:9px 0"><input type="checkbox" id="daily-consent"> Consultar CartoCiudad y enviar coordenadas al servicio OSRM de demostración. Nunca fotos ni nombres.</label><button id="daily-run" class="yellow" style="width:100%">Localizar y ordenar</button><div class="row"><button id="daily-reorder">Reordenar pendientes</button><button id="daily-next">Siguiente GPS</button></div><div class="row"><button id="daily-map">Ver mapa de paradas</button><button id="daily-clear">Borrar ruta</button></div><div class="row"><input id="daily-add-text" placeholder="Nueva dirección, portal y zona" style="flex:1;min-width:0"><button id="daily-add">Añadir parada</button></div><label style="display:block;font-size:12px"><input id="daily-add-new" type="checkbox"> Es un envío nuevo: aumentar también el total de la PDA</label><div class="row"><button id="daily-plan">Recalcular desde origen</button><button id="daily-now">Hora actual</button></div><input id="daily-filter" placeholder="Buscar calle, paquete o zona" style="width:100%;margin-top:8px"><select id="daily-view" style="width:100%;margin:5px 0"><option value="all">Todas las paradas</option><option value="pending">Pendientes</option><option value="issues">Sin verificar</option><option value="done">Gestionadas</option></select><div id="daily-focus" style="margin-top:8px"></div><div id="daily-list"></div>';
+dp.innerHTML='<button class="close" id="daily-close">×</button><h2>📋 Ruta diaria de reparto · 3.3</h2><p class="note">Fotografía el listado. Revisa las direcciones reconocidas. Una por línea (calle y portal); puedes elegir una zona común. Elimina nombres y códigos.</p><div class="row"><button id="daily-camera">📷 Foto</button><button id="daily-gallery">Fotos</button></div><input id="daily-photo" type="file" accept="image/*" capture="environment" hidden><input id="daily-pictures" type="file" accept="image/*" hidden><label for="daily-locality" style="font-size:13px;font-weight:700">Zona del listado (si no figura en las filas)</label><select id="daily-locality" style="width:100%;margin:5px 0 8px;padding:8px;font:inherit"><option value="">Indicar localidad en cada dirección</option><option>San Miguel de Abona</option><option>Las Zocas</option><option>Aldea Blanca</option><option>El Roque</option><option>Tamaide</option><option>El Frontón</option><option>Las Chafiras</option><option>Llano del Camello</option><option>Guargacho</option><option>Oroteanda</option><option>Golf del Sur</option><option>Vilaflor</option><option>San Isidro</option></select><textarea id="daily-text" rows="6" style="width:100%;font:inherit;padding:8px" placeholder="Calle Alfonso Mejías 62, San Miguel de Abona"></textarea><p class="note" id="daily-msg" role="status"></p><div id="daily-vision-info" style="font-size:13px;margin:6px 0"></div><label style="display:block;font-size:13px;margin:8px 0"><input type="checkbox" id="daily-vision-consent"> Autorizar envío de foto a mi lector IA privado (mi ordenador, mediante conexión cifrada). Sin nombres ni códigos.</label><div class="row"><button id="daily-office">Desde Correos</button><button id="daily-gps">Desde mi GPS</button></div><p class="note" id="daily-origin"></p><div class="row"><label for="daily-expected" style="flex:1;font-size:13px;font-weight:700">Envíos de la PDA (opcional)</label><input id="daily-expected" type="number" min="1" max="200" inputmode="numeric" placeholder="35" style="max-width:95px"></div><label style="display:block;font-size:13px;margin:6px 0"><input type="checkbox" id="daily-return"> Terminar la ruta en Correos</label><label for="daily-sector" style="display:block;font-weight:700;margin-top:8px">Distribución por zonas</label><select id="daily-sector" style="width:100%;margin:5px 0;padding:8px;font:inherit"><option value="auto">Automático · completar una zona antes de otra</option><option value="Norte">Norte primero</option><option value="Sur">Sur primero</option><option value="Este">Este primero</option><option value="Oeste">Oeste primero</option><option value="free">Ruta libre · sin sectores</option></select><p class="note">Sectores relativos a Correos, no al GPS actual. Se mantiene la misma localidad en un sector cuando es conocida.</p><div class="row"><label for="daily-depart">Hora de salida</label><input id="daily-depart" type="time" value="14:30"></div><label for="daily-nav">Navegador preferido</label><select id="daily-nav"><option value="apple">Apple Maps</option><option value="google">Google Maps</option><option value="waze">Waze</option></select><p class="note">Cálculo vial: comprueba rodeos y accesos. Los portales dudosos siempre quedan en el checklist.</p><label style="display:block;font-size:13px;margin:9px 0"><input type="checkbox" id="daily-consent"> Consultar CartoCiudad y enviar coordenadas al servicio OSRM de demostración. Nunca fotos ni nombres.</label><button id="daily-run" class="yellow" style="width:100%">Localizar y ordenar</button><div class="row"><button id="daily-reorder">Reordenar pendientes</button><button id="daily-next">Siguiente GPS</button></div><div class="row"><button id="daily-map">Ver mapa de paradas</button><button id="daily-clear">Borrar ruta</button></div><div class="row"><input id="daily-add-text" placeholder="Nueva dirección, portal y zona" style="flex:1;min-width:0"><button id="daily-add">Añadir parada</button></div><label style="display:block;font-size:12px"><input id="daily-add-new" type="checkbox"> Es un envío nuevo: aumentar también el total de la PDA</label><div class="row"><button id="daily-plan">Recalcular desde origen</button><button id="daily-now">Hora actual</button></div><input id="daily-filter" placeholder="Buscar calle, paquete o zona" style="width:100%;margin-top:8px"><select id="daily-view" style="width:100%;margin:5px 0"><option value="all">Todas las paradas</option><option value="pending">Pendientes</option><option value="issues">Sin verificar</option><option value="done">Gestionadas</option></select><div id="daily-focus" style="margin-top:8px"></div><div id="daily-list"></div>';
 document.body.appendChild(dp);$("daily-locality").value="San Miguel de Abona";$("daily-expected").value=daily.expected||"";$("daily-return").checked=!!daily.returnOffice;$("daily-sector").value=daily.sectorMode||"auto";$("daily-depart").value=daily.departure||"14:30";$("daily-nav").value=localStorage.getItem("daily-nav")||"apple";$("daily-nav").onchange=()=>{localStorage.setItem("daily-nav",$("daily-nav").value);renderFocus()};
 const dbtn=document.createElement("button");dbtn.innerHTML="📋<br>Ruta diaria";dbtn.style.background='#ffce26';dbtn.style.color='#102b46';document.querySelector('#menu').appendChild(dbtn);
 const dm=t=>$("daily-msg").textContent=t;
@@ -1072,6 +1077,7 @@ async function dailyOfficial(q){
  }return found;
 }
 async function resolveDaily(raw){
+ const saved=corrections[correctionId(raw,$("daily-locality").value)];if(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lon))return {...saved,raw,count:1,done:false};
  if(/\[REVISAR\]/i.test(raw))return {raw,error:"Lectura dudosa: confirma la calle o el número",count:1};
  let cleaned=raw.replace(/^(C\/|CL\.)\s*/i,"Calle ").replace(/^(Ctra\.?|Cta\.?)\s+/i,"Carretera ").replace(/^(Gral\.?)\s+/i,"Carretera General ").replace(/\bGral\.?\s+/i,"General ").replace(/\bHdez\.?\s+/i,"Hernández ");
  cleaned=cleaned.replace(/^(Avda?\.?|Av\.)\s+/i,"Avenida ").replace(/^(Pza\.?|Pl\.)\s+/i,"Plaza ").replace(/^Urb\.?\s+/i,"Urbanización ").replace(/^Psje\.?\s+/i,"Pasaje ");
@@ -1085,7 +1091,7 @@ async function resolveDaily(raw){
  if(f.geometry?.type!=="Point"||normalized(p.component_AdminUnitName_4)!==q.municipality||!areaMatch(p.component_AddressAreaName,q)||!keys.includes(DailyRouteCore.streetKey(street)))continue;
  const [lat,lon]=pointOf(f);opts.push({street,num,area:p.component_AddressAreaName||"",muni:p.component_AdminUnitName_4,lat,lon,source:"IGN descargado",exact:DailyRouteCore.sameRoad(q.street,street)});
  }
- if(navigator.onLine&&(!q.population||!opts.some(x=>x.exact&&x.num===q.num)))opts.push(...await dailyOfficial(q));
+ if(navigator.onLine&&$("daily-consent").checked&&(!q.population||!opts.some(x=>x.exact&&x.num===q.num)))opts.push(...await dailyOfficial(q));
  const uniq=[];for(const p of opts)if(Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&!uniq.some(v=>v.num===p.num&&DailyRouteCore.sameRoad(v.street,p.street)&&distance([v.lat,v.lon],[p.lat,p.lon])<12))uniq.push(p);
  const hits=uniq.filter(x=>x.num===q.num),exact=hits.filter(x=>x.exact);
  const ambiguous=hits.length!==1||exact.length!==1;
@@ -1107,14 +1113,19 @@ async function tableFor(pts,approaches){
  const d=await r.json();if(!r.ok||d.code!=="Ok"||!Array.isArray(d.durations)||!Array.isArray(d.distances))throw Error("Servicio de rutas no disponible");return d;
 }
 async function orderDaily(stops){
- if(!navigator.onLine)throw Error("Sin conexión: se mantiene el listado, sin inventar ruta.");
+
  if(stops.length>75)throw Error("Usa sectores de hasta 75 paradas.");
  const returnOffice=$("daily-return").checked,pts=[dailyOrigin,...stops,...(returnOffice?[OFFICE]:[])],end=returnOffice?pts.length-1:null;
- const unrestricted=pts.map(()=>"unrestricted"),base=await tableFor(pts,unrestricted);
+ const unrestricted=pts.map(()=>"unrestricted");
+ let offline=!navigator.onLine,base=null;
+ if(!offline){try{base=await tableFor(pts,unrestricted)}catch(e){offline=true}}
+ const cached=daily.matrixCache;let cacheIndexes=null;
+ if(offline){if(!cached)throw Error("Sin matriz vial guardada. Conserva el plan anterior y prepara la ruta con cobertura.");cacheIndexes=pts.map(p=>cached.keys.indexOf(pointKey(p)));if(cacheIndexes.some(i=>i<0))throw Error("La salida o una parada no está en la matriz guardada. No se inventa el trayecto; usa el origen guardado o la última parada confirmada.");base={durations:cacheIndexes.map(i=>cacheIndexes.map(j=>cached.durations[i][j])),distances:cacheIndexes.map(i=>cacheIndexes.map(j=>cached.distances[i][j])),sources:cacheIndexes.map(i=>cached.sources[i]),destinations:cacheIndexes.map(i=>cached.destinations[i])};}
  // A curb-constrained matrix can create artificial U-turns; keep it only when each
  // incoming leg remains reasonably close to unrestricted legal driving cost.
  let approaches=pts.map((p,i)=>i===0||i===end?"unrestricted":"curb"),d=base,mode="acceso flexible";
  try{
+ if(offline){approaches=cacheIndexes.map(i=>cached.approaches[i]);mode="matriz vial guardada · sin cobertura";}else{
  const curb=await tableFor(pts,approaches);
  for(let j=1;j<pts.length;j++){
  if(j===end)continue;
@@ -1122,7 +1133,8 @@ async function orderDaily(stops){
  if(abnormal)approaches[j]="unrestricted";
  }
  if(approaches.includes("curb")){d=approaches.every((x,i)=>x===(i===0||i===end?"unrestricted":"curb"))?curb:await tableFor(pts,approaches);mode="acera adaptativa"}
- }catch(e){approaches=unrestricted;d=base}
+ }}catch(e){approaches=unrestricted;d=base}
+ if(!offline){daily.matrixCache={keys:pts.map(pointKey),durations:d.durations,distances:d.distances,sources:d.sources,destinations:d.destinations,approaches,at:new Date().toISOString()};}
  // Unsnappable stops remain visible, not omitted; no fabricated route for them.
  if(!d.sources?.[0]||d.sources[0].distance>100)throw Error("La posición de salida queda lejos de una vía accesible; comprueba el GPS");const blocked=[],indices=[0];
  for(let i=1;i<pts.length;i++){
@@ -1135,7 +1147,7 @@ async function orderDaily(stops){
  const m=indices.map(i=>indices.map(j=>d.durations[i][j])),localEnd=end===null?null:indices.indexOf(end);
  const sectorMode=$("daily-sector").value,bySector=sectorMode!=="free",first=sectorMode==="auto"||!bySector?null:sectorMode,labels=indices.map(i=>i===0||i===end?null:deliverySector(stops[i-1]));
  let order=bySector?DailyRouteCore.sectorOrder(m,labels,{end:localEnd,first}):DailyRouteCore.optimize(m,{end:localEnd}),engine=bySector?"Optimizador por sectores":"Optimizador local";
- if(vision.endpoint&&vision.key&&m.every(r=>r.every(Number.isFinite))){
+ if(!offline&&vision.endpoint&&vision.key&&m.every(r=>r.every(Number.isFinite))){
  try{
  const r=await fetch(vision.endpoint+"/optimize",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+vision.key},body:JSON.stringify({matrix:m,end:localEnd}),signal:AbortSignal.timeout(24000)});
  const v=await r.json();if(r.ok&&Array.isArray(v.order)&&v.order.length===order.length&&new Set(v.order).size===order.length&&v.order.every(i=>order.includes(i))&&(!bySector||DailyRouteCore.contiguousSectors(v.order,labels,first))&&DailyRouteCore.score(m,v.order,localEnd)<=DailyRouteCore.score(m,order,localEnd)+.001){order=v.order;engine=v.engine||"VROOM"}
@@ -1146,14 +1158,17 @@ async function orderDaily(stops){
  const prev=sequence[k],w=d.destinations[i],meters=d.distances[prev][i],seconds=d.durations[prev][i],straight=DailyRouteCore.air(pts[prev],pts[i]);
  return {...stops[i-1],timing:sched.rows[k],sector:bySector?deliverySector(stops[i-1]):null,blockedRoute:false,routeWarning:null,leg:{meters,seconds,straight,detour:DailyRouteCore.detour(pts[prev],pts[i],meters,seconds)},access:w?.location?{lat:w.location[1],lon:w.location[0],meters:w.distance}:null};
  });
- let geometry=null,routeLegs=null;
+ let geometry=null,routeLegs=null;const signature=sequence.map(i=>pointKey(pts[i])).join(";");
+ if(offline&&cached.routeSignature===signature)geometry=cached.geometry||null;
  try{
+ if(offline)throw Error("offline");
  const path=sequence.map(i=>pts[i].lon+","+pts[i].lat).join(";");
  const rr=await fetch("https://router.project-osrm.org/route/v1/driving/"+path+"?overview=full&geometries=geojson&continue_straight=false&approaches="+sequence.map(i=>approaches[i]).join(";"),{signal:AbortSignal.timeout(35000)});
  const rd=await rr.json();if(rr.ok&&rd.code==="Ok"&&rd.routes?.[0]?.geometry?.coordinates){geometry=rd.routes[0].geometry.coordinates.map(([lon,lat])=>[lat,lon]);routeLegs=rd.routes[0].legs}
  }catch(e){}
+ if(!offline&&geometry){daily.matrixCache.routeSignature=signature;daily.matrixCache.geometry=geometry;}
  if(routeLegs){ordered.forEach((s,k)=>{const l=routeLegs[k];if(l)s.leg={meters:l.distance,seconds:l.duration,straight:s.leg.straight,detour:DailyRouteCore.detour(pts[sequence[k]],pts[sequence[k+1]],l.distance,l.duration)}});const actual=m.map(r=>r.slice()),seq=[0,...order,...(localEnd===null?[]:[localEnd])];routeLegs.forEach((l,k)=>{if(seq[k+1]!==undefined)actual[seq[k]][seq[k+1]]=l.duration});sched=DailyRouteCore.schedule(actual,order,meta,departure,localEnd);ordered.forEach((s,k)=>s.timing=sched.rows[k]);}
- return {ordered:[...ordered,...blocked],geometry,engine,schedule:{finish:sched.finish,drive:sched.drive,service:sched.service,waiting:sched.waiting,late:sched.late},mode:mode+(bySector?" · sectores "+[...new Set(ordered.map(s=>s.sector))].join(" → "):"")};
+ return {ordered:[...ordered,...blocked],geometry,engine:engine+(offline?" · datos viales guardados":""),schedule:{finish:sched.finish,drive:sched.drive,service:sched.service,waiting:sched.waiting,late:sched.late},mode:mode+(bySector?" · sectores "+[...new Set(ordered.map(s=>s.sector))].join(" → "):"")};
 }
 
 
@@ -1197,14 +1212,14 @@ function stopSettings(s){
 }
 async function addDailyStop(){
  const raw=$("daily-add-text").value.trim();if(!raw)return;
- if(!$("daily-consent").checked){dm("Autoriza las consultas antes de añadir");return}
+ if(navigator.onLine&&!$("daily-consent").checked){dm("Autoriza las consultas antes de añadir");return}
  const btn=$("daily-add");btn.disabled=true;try{
  const lines=DailyRouteCore.expand(raw);if(!lines.length)return;
  const added=[];for(const line of lines)added.push(await resolveDaily(line));
  daily.stops=[...daily.stops,...added];if(daily.expected&&$("daily-add-new").checked){daily.expected+=added.reduce((a,s)=>a+countOf(s),0);$("daily-expected").value=daily.expected}$("daily-add-new").checked=false;daily.routeError="Parada añadida: recalcula pendientes";daily.geometry=null;dailySave();$("daily-add-text").value="";renderDaily();dm(daily.routeError);
  }catch(e){dm(e.message)}finally{btn.disabled=false}
 }
-function renderFocus(){const el=$("daily-focus");el.replaceChildren();const s=daily.stops.find(x=>!x.done&&!x.error&&!x.blockedRoute);if(!s)return;el.style.cssText="padding:12px;background:#153452;color:white;border-radius:12px;margin:10px 0";const t=document.createElement("strong");t.textContent="SIGUIENTE · "+(s.sector||s.area||"Ruta")+" · "+(s.name||s.raw);el.appendChild(t);if(s.meta?.load)dailyNote(el,"Paquete: "+s.meta.load);if(daily.routeError)dailyNote(el,daily.routeError,true);else{if(s.leg?.detour)dailyNote(el,"RODEO ANORMAL: comprueba el tramo antes de conducir",true);dailyLink(el,"Navegar",routeUrl($("daily-nav").value,s));dailyButton(el,"Ver tramo",()=>previewDailyLeg(s));dailyButton(el,"Gestionar 1 envío",()=>recordOutcome(s,"gestionado",""));} }
+function renderFocus(){const el=$("daily-focus");el.replaceChildren();const s=daily.stops.find(x=>!x.done&&!x.error&&!x.blockedRoute);if(!s)return;el.style.cssText="padding:12px;background:#153452;color:white;border-radius:12px;margin:10px 0";const t=document.createElement("strong");t.textContent="SIGUIENTE · "+(s.sector||s.area||"Ruta")+" · "+(s.name||s.raw);el.appendChild(t);if(s.meta?.load)dailyNote(el,"Paquete: "+s.meta.load);if(countMismatch())dailyNote(el,"Revisa cantidad PDA antes de navegar",true);else if(daily.routeError)dailyNote(el,daily.routeError,true);else{if(s.leg?.detour)dailyNote(el,"RODEO ANORMAL: comprueba el tramo antes de conducir",true);dailyLink(el,"Navegar",routeUrl($("daily-nav").value,s));dailyButton(el,"Ver tramo",()=>previewDailyLeg(s));if("speechSynthesis" in window)dailyButton(el,"Leer destino",()=>{const u=new SpeechSynthesisUtterance("Siguiente destino. "+(s.name||s.raw));u.lang="es-ES";speechSynthesis.cancel();speechSynthesis.speak(u)});dailyButton(el,"Gestionar 1 envío",()=>recordOutcome(s,"gestionado",""));} }
 function countOf(s){return Math.max(1,Number(s.count)||1)}
 function managedOf(s){return s.done?countOf(s):Math.min(countOf(s),Math.max(0,Number(s.managed)||0))}
 function dailyLink(row,label,url){const a=document.createElement("a");a.textContent=label;a.href=url;a.target="_blank";a.rel="noopener";a.style.cssText="display:inline-block;margin:7px 8px 0 0;padding:9px 10px;border-radius:8px;background:#e8f0fa;color:#153452;font-weight:700;text-decoration:none";row.appendChild(a)}
@@ -1213,6 +1228,7 @@ function dailyNote(row,text,warning=false){const p=document.createElement("p");p
 function setPortal(s,p,source){
  if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon)||p.lat<27.8||p.lat>28.7||p.lon<-17.3||p.lon>-16)throw Error("Coordenadas fuera de Tenerife");
  Object.assign(s,{lat:p.lat,lon:p.lon,name:p.street?canonicalPortal(p):s.raw,source,area:p.area||s.area,error:null,blockedRoute:false,routeWarning:null,leg:null,access:null});
+ if(!/\[REVISAR\]/i.test(s.raw)&&confirm("¿Guardar esta corrección exacta para futuras jornadas? Solo dirección y coordenadas.")){const key=correctionId(s.raw,$("daily-locality").value);corrections[key]={lat:s.lat,lon:s.lon,name:s.name,source:"Portal confirmado guardado",area:s.area,num:s.num};localStorage.setItem(correctionKey,JSON.stringify(corrections));}
  delete s.candidates;delete s.references;daily.geometry=null;daily.engine=null;daily.routeError="Portal corregido: recalcula pendientes";dailySave();renderDaily();dm(daily.routeError);
 }
 function renderDaily(){
@@ -1221,9 +1237,11 @@ function renderDaily(){
  const summary=document.createElement("div");summary.style.cssText="padding:10px 0;font-weight:700;color:#153452";
  summary.textContent=done+"/"+total+" envíos gestionados · "+(total-done)+" pendientes · "+unresolved+" sin portal/acceso confirmado";
  root.appendChild(summary);renderFocus();
+ if(daily.matrixCache)dailyNote(root,"Matriz vial guardada: "+new Date(daily.matrixCache.at).toLocaleString()+" · recalculable sin red entre estos puntos; no es tráfico actual.");
+ if(!navigator.onLine)dailyNote(root,"SIN COBERTURA: no se calculan vías nuevas. Usa mapas offline descargados y respeta señalización.",true);
  if(daily.expected&&daily.expected!==total)dailyNote(root,"REVISAR: PDA "+daily.expected+" ≠ "+total+" envíos importados.",true);
  if(daily.routeError)dailyNote(root,daily.routeError,true);
- if(daily.engine)dailyNote(root,"Motor: "+daily.engine+" · "+(daily.mode||""));if(daily.schedule&&!daily.routeError)dailyNote(root,"Fin estimado "+formatTime(daily.schedule.finish)+" · conducción "+Math.ceil(daily.schedule.drive/60)+" min · entregas "+Math.ceil(daily.schedule.service/60)+" min · esperas "+Math.ceil(daily.schedule.waiting/60)+" min"+(daily.schedule.late?" · horarios en conflicto":"")+(daily.stops.some(s=>!s.done&&(s.error||s.blockedRoute))?" · excluye paradas no localizadas":""),!!daily.schedule.late);const legs=daily.stops.filter(s=>!s.done&&s.leg).map(s=>s.leg);if(legs.length){dailyNote(root,"Tramos calculados pendientes: "+(legs.reduce((a,l)=>a+l.meters,0)/1000).toFixed(2)+" km · "+Math.ceil(legs.reduce((a,l)=>a+l.seconds,0)/60)+" min estimados. "+legs.filter(l=>l.detour).length+" rodeos a revisar.");}
+ if(daily.engine)dailyNote(root,"Motor: "+daily.engine+" · "+(daily.mode||""));if(daily.schedule&&!daily.routeError)dailyNote(root,"Fin estimado "+formatTime(daily.schedule.finish)+" · conducción "+Math.ceil(daily.schedule.drive/60)+" min · entregas "+Math.ceil(daily.schedule.service/60)+" min · esperas "+Math.ceil(daily.schedule.waiting/60)+" min"+(daily.schedule.late?" · horarios en conflicto":"")+(daily.stops.some(s=>!s.done&&(s.error||s.blockedRoute))?" · excluye paradas no localizadas":""),!!daily.schedule.late);const legs=daily.stops.filter(s=>!s.done&&s.leg).map(s=>s.leg);if(legs.length&&!daily.routeError){dailyNote(root,"Tramos calculados pendientes: "+(legs.reduce((a,l)=>a+l.meters,0)/1000).toFixed(2)+" km · "+Math.ceil(legs.reduce((a,l)=>a+l.seconds,0)/60)+" min estimados. "+legs.filter(l=>l.detour).length+" rodeos a revisar.");}
  if(daily.geometry?.length>1)L.polyline(daily.geometry,{color:"#1969af",weight:5,opacity:.8}).addTo(dailyLayer);
  let n=0,lastHeading=null;
  for(const s of daily.stops){
@@ -1235,12 +1253,12 @@ function renderDaily(){
  if(countOf(s)>1)head.textContent+=" · "+managedOf(s)+"/"+countOf(s)+" envíos";
  row.appendChild(head);
  if(s.source)dailyNote(row,"Fuente: "+s.source);if(s.outcomes?.length)dailyNote(row,"Gestionados: "+s.outcomes.map(o=>o.type==="incidencia"?"Incidencia: "+o.reason:"Entregado").join(" · "));if(s.meta?.load)dailyNote(row,"Paquete: "+s.meta.load);if(s.meta?.note)dailyNote(row,"Nota: "+s.meta.note);if(s.meta?.priority==="urgent")dailyNote(row,"PRIORITARIO",true);if(!complete&&s.timing&&!daily.routeError)dailyNote(row,"Llegada estimada "+formatTime(s.timing.eta)+(s.timing.late?" · fuera de horario":"")+(s.timing.wait?" · espera "+Math.ceil(s.timing.wait/60)+" min":""),!!s.timing.late);
- if(!complete&&s.leg){
+ if(!complete&&s.leg&&!daily.routeError){
  dailyNote(row,(s.leg.meters/1000).toFixed(2)+" km · "+Math.ceil(s.leg.seconds/60)+" min estimados por carretera desde parada anterior");
  if(s.leg.detour)dailyNote(row,"RODEO ANORMAL: compara el acceso y la ruta a pie; solo si hay estacionamiento legal y camino seguro.",true);
  }
  if(s.error||s.blockedRoute)dailyNote(row,s.error||s.routeWarning,true);
- if(!complete&&!s.error&&!s.blockedRoute){
+ if(!complete&&!s.error&&!s.blockedRoute&&!countMismatch()){
  dailyLink(row,"GPS Apple",routeUrl("apple",s));dailyLink(row,"Google",routeUrl("google",s));dailyLink(row,"Waze",routeUrl("waze",s));dailyButton(row,"Ver tramo real desde aquí",()=>previewDailyLeg(s));
  dailyLink(row,"Ver portal", "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(s.lat+","+s.lon));
  if(s.access&&s.access.meters>5)dailyLink(row,"Acceso vial ("+Math.round(s.access.meters)+" m)","https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(s.access.lat+","+s.access.lon));
@@ -1259,8 +1277,8 @@ function renderDaily(){
  }
  dailyButton(row,"Corregir portal",async()=>{
  const v=prompt("Dirección completa (sin nombres de destinatarios)",s.raw);if(!v)return;
- if(!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}
- try{const fix=await resolveDaily(v.trim());const count=countOf(s),managed=managedOf(s);Object.assign(s,fix,{count,managed,done:managed>=count});daily.geometry=null;daily.engine=null;daily.routeError="Dirección corregida: recalcula pendientes";dailySave();renderDaily();dm(daily.routeError)}catch(e){dm(e.message)}
+ if(navigator.onLine&&!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}
+ try{const fix=await resolveDaily(v.trim());const count=countOf(s),managed=managedOf(s);for(const k of ["lat","lon","name","source","area","num","error","candidates","references","access","leg","timing","blockedRoute","routeWarning"])delete s[k];Object.assign(s,fix,{count,managed,done:managed>=count});daily.geometry=null;daily.engine=null;daily.routeError="Dirección corregida: recalcula pendientes";dailySave();renderDaily();dm(daily.routeError)}catch(e){dm(e.message)}
  });
  dailyButton(row,"Confirmar coordenadas",()=>{const v=prompt("Latitud, longitud verificadas en la PDA o mapa (no aproximadas)");if(!v)return;const [lat,lon]=v.split(",").map(x=>Number(x.trim()));if(confirm("¿Confirmas que esas coordenadas corresponden al portal exacto?")){try{setPortal(s,{lat,lon},"Coordenadas confirmadas por usuario")}catch(e){dm(e.message)}}});
  dailyButton(row,"Guardar GPS aquí",async()=>{if(!confirm("Solo si estás físicamente en el portal correcto. ¿Confirmar ubicación?"))return;try{const p=await currentPosition();setPortal(s,p,"GPS confirmado en portal")}catch(e){dm(e.message)}});
@@ -1285,7 +1303,7 @@ function groupPending(all){
  return out;
 }
 async function runDaily(reorder=false,keepOrigin=false){
- if(!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}
+ if(navigator.onLine&&!$("daily-consent").checked){dm("Confirma el uso de servicios externos.");return}
  const btn=$("daily-run"),rb=$("daily-reorder");btn.disabled=rb.disabled=true;
  try{
  if(reorder&&!keepOrigin){dailyOrigin=await currentPosition();$("daily-depart").value=localClock()}
@@ -1302,7 +1320,8 @@ async function runDaily(reorder=false,keepOrigin=false){
  }
  const completed=all.filter(x=>managedOf(x)>=countOf(x)),grouped=groupPending(all),pending=grouped.filter(x=>!x.error),unresolved=grouped.filter(x=>x.error);
  // Save all items before network routing. If it fails, do not erase or silently omit addresses.
- daily={origin:dailyOrigin,expected,returnOffice:$("daily-return").checked,sectorMode:$("daily-sector").value,departure:$("daily-depart").value,geometry:null,stops:[...completed,...pending,...unresolved],routeError:null};
+ const previous=daily;
+ daily={matrixCache:reorder?previous.matrixCache:null,origin:dailyOrigin,expected,returnOffice:$("daily-return").checked,sectorMode:$("daily-sector").value,departure:$("daily-depart").value,geometry:null,stops:[...completed,...pending,...unresolved],routeError:null};
  const actual=daily.stops.reduce((a,s)=>a+countOf(s),0);
  if(expected&&expected!==actual){daily.routeError="REVISAR cantidad: "+actual+" leídos, "+expected+" en PDA. Corrige el listado antes de navegar.";dailySave();renderDaily();dm(daily.routeError);return}
  dailySave();renderDaily();showOrigin();
@@ -1312,11 +1331,12 @@ async function runDaily(reorder=false,keepOrigin=false){
  const result=await orderDaily(pending);
  daily={...daily,geometry:result.geometry,engine:result.engine,mode:result.mode,schedule:result.schedule,stops:[...completed,...result.ordered,...unresolved],routeError:null};dailySave();renderDaily();
  dm(result.ordered.filter(x=>!x.blockedRoute).length+" paradas ordenadas; "+unresolved.length+" portales sin verificar. "+(result.geometry?"Trazado vial disponible. ":"Trazado no disponible. ")+"Motor: "+result.engine+". Respeta la señalización real.");
- }catch(e){daily.routeError="No se calculó la ruta: "+e.message;dailySave();renderDaily();dm(daily.routeError)}
+ }catch(e){if(reorder){daily={...previous,expected,routeError:"No se recalculó: "+e.message,stops:previous.stops};}else daily.routeError="No se calculó la ruta: "+e.message;dailySave();renderDaily();dm(daily.routeError)}
  }catch(e){dm(e.message+" · No se ha inventado ninguna ruta.")}finally{btn.disabled=rb.disabled=false}
 }
 $("daily-run").onclick=()=>runDaily();$("daily-reorder").onclick=()=>runDaily(true);$("daily-plan").onclick=()=>runDaily(true,true);$("daily-now").onclick=()=>$("daily-depart").value=localClock();$("daily-filter").oninput=renderDaily;$("daily-view").onchange=renderDaily;$("daily-add").onclick=addDailyStop;
 $("daily-next").onclick=()=>{
+ if(countMismatch()){dm("Revisa el total de envíos de la PDA.");return}
  if(daily.routeError){dm(daily.routeError);return}
  const s=daily.stops.find(x=>!x.error&&!x.blockedRoute&&!x.done);
  if(s){if(s.leg?.detour){dm("Rodeo anormal: consulta las alternativas de la parada.");return}window.open(routeUrl($("daily-nav").value,s),"_blank","noopener")}
@@ -1324,7 +1344,10 @@ $("daily-next").onclick=()=>{
  else if(daily.returnOffice)window.open(routeUrl($("daily-nav").value,OFFICE),"_blank","noopener");
  else dm("No quedan envíos pendientes.");
 };
-$("daily-map").onclick=()=>{dailyLegLayer.clearLayers();dp.style.display="none";const pts=daily.stops.filter(s=>!s.error&&!s.done).map(s=>[s.lat,s.lon]);if(pts.length)map.fitBounds(pts,{padding:[40,100],maxZoom:19})};
+const clearCorrections=dailyButton(dp,"Borrar memoria de portales",()=>{if(confirm("¿Borrar solo las correcciones guardadas? No se borra la ruta diaria.")){corrections={};localStorage.removeItem(correctionKey);dm("Memoria de correcciones borrada.")}});
+const offlineBtn=dailyButton(dp,"Reordenar desde última parada confirmada",async()=>{const last=daily.stops.filter(s=>!s.error&&!s.blockedRoute&&s.done&&Number.isFinite(s.lat)&&s.outcomes?.length).sort((a,b)=>String(b.outcomes.at(-1).at).localeCompare(String(a.outcomes.at(-1).at)))[0];if(!last||!confirm("¿Estás ahora en "+(last.name||last.raw)+"? No se usa un GPS aproximado."))return;dailyOrigin={lat:last.lat,lon:last.lon,name:"Última parada confirmada"};$("daily-depart").value=localClock();await runDaily(true,true)});offlineBtn.style.width="100%";
+ window.addEventListener("offline",()=>{if(dp.style.display!=="none")renderDaily()});window.addEventListener("online",()=>{if(dp.style.display!=="none")renderDaily()});
+ $("daily-map").onclick=()=>{dailyLegLayer.clearLayers();dp.style.display="none";const pts=daily.stops.filter(s=>!s.error&&!s.done).map(s=>[s.lat,s.lon]);if(pts.length)map.fitBounds(pts,{padding:[40,100],maxZoom:19})};
 $("daily-clear").onclick=()=>{if(confirm("¿Borrar la ruta diaria y el texto de la foto?")){daily={stops:[]};dailyOrigin=null;dailySave();$("daily-text").value="";$("daily-expected").value="";renderDaily();showOrigin();dm("Ruta borrada.")}};
 
 loadZones().then(()=>{if(!navigator.onLine)app.offlineView=true;updateView();refreshSoon()});
